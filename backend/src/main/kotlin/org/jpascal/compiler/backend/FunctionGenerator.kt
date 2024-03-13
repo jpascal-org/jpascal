@@ -30,6 +30,15 @@ class FunctionGenerator(
         mv.visitMaxs(maxStack, maxLocals)
     }
 
+    private fun List<Parameter>.findIndexByName(name: String): Int? {
+        var i = 0
+        while (i < size) {
+            if (this[i].name == name) return i
+            i++
+        }
+        return null
+    }
+
     private fun generateExpression(expression: Expression) {
         when (expression) {
             is IntegerLiteral -> when (expression.value) {
@@ -40,6 +49,14 @@ class FunctionGenerator(
                 4 -> mv.visitInsn(Opcodes.ICONST_4)
                 5 -> mv.visitInsn(Opcodes.ICONST_5)
                 else -> mv.visitIntInsn(Opcodes.BIPUSH, expression.value)
+            }
+            is Variable -> {
+                val index = function.params.findIndexByName(expression.name)
+                if (index != null) {
+                    mv.visitVarInsn(Opcodes.ILOAD, index)
+                } else {
+                    TODO()
+                }
             }
             is ArithmeticExpression -> when (expression.op) {
                 ArithmeticOperation.PLUS -> {

@@ -22,7 +22,7 @@ class Functions {
             returnType = IntegerType,
             declarations = null,
             block = Block(
-                operators = listOf(Assignment(Variable("foo"), IntegerLiteral(4)))
+                operators = listOf(Assignment(Variable("foo", IntegerType), IntegerLiteral(4)))
             ),
             position = position
         )
@@ -72,7 +72,7 @@ class Functions {
             block = Block(
                 operators = listOf(
                     Assignment(
-                        Variable("foo"),
+                        Variable("foo", IntegerType),
                         expression
                     )
                 )
@@ -86,6 +86,41 @@ class Functions {
         writeResult(result)
         val clazz = result.getClass()
         return clazz.getMethod(function.name).invoke(null) as Int
+    }
+
+    @Test
+    fun integerParameters() {
+        val position = dummyPosition("IntegerParameters.pas")
+        val function = Function(
+            name = "foo",
+            params = listOf(
+                Parameter("x", IntegerType, Pass.VALUE),
+                Parameter("y", IntegerType, Pass.VALUE),
+            ),
+            returnType = IntegerType,
+            declarations = null,
+            block = Block(
+                operators = listOf(
+                    Assignment(
+                        Variable("foo", IntegerType),
+                        ArithmeticExpression(
+                            ArithmeticOperation.PLUS,
+                            Variable("x", IntegerType),
+                            Variable("y", IntegerType)
+                        )
+                    )
+                )
+            ),
+            position = position
+        )
+        val program = createProgram(position, function)
+        val context = Context()
+        val generator = ProgramGenerator(context)
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod(function.name, Int::class.java, Int::class.java).invoke(null, 5, 10)
+        assertEquals(15, r)
     }
 
     private fun createProgram(position: SourcePosition, function: Function) =

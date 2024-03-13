@@ -1,3 +1,5 @@
 package org.jpascal.compiler.frontend.ir
 
-data class Variable(val name: String)
+import org.jpascal.compiler.frontend.ir.types.Type
+
+data class Variable(val name: String, override val type: Type) : Expression
