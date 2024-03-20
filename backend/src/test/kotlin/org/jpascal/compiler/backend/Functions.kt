@@ -2,7 +2,7 @@ package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.Function
+import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import java.io.File
 import kotlin.test.Test
@@ -16,13 +16,13 @@ class Functions {
     @Test
     fun returnIntegerLiteral() {
         val position = dummyPosition("ReturnIntegerLiteral.pas")
-        val function = Function(
-            name = "foo",
+        val function = FunctionDeclaration(
+            identifier = "foo",
             params = listOf(),
             returnType = IntegerType,
             declarations = null,
-            block = Block(
-                operators = listOf(Assignment(Variable("foo", IntegerType), IntegerLiteral(4)))
+            compoundStatement = CompoundStatement(
+                statements = listOf(Assignment(Variable("foo", IntegerType), IntegerLiteral(4)))
             ),
             position = position
         )
@@ -32,7 +32,7 @@ class Functions {
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()
-        val r = clazz.getMethod(function.name).invoke(null)
+        val r = clazz.getMethod(function.identifier).invoke(null)
         assertEquals(4, r)
     }
 
@@ -41,36 +41,39 @@ class Functions {
         val position = dummyPosition("ReturnIntegerExpression.pas")
         assertEquals(
             14, evalIntegerExpression(
-                position, ArithmeticExpression(
+                position, TreeExpression(
                     ArithmeticOperation.PLUS,
                     IntegerLiteral(4),
-                    IntegerLiteral(10)
+                    IntegerLiteral(10),
+                    IntegerType
                 )
             )
         )
         assertEquals(
             20, evalIntegerExpression(
-                position, ArithmeticExpression(
+                position, TreeExpression(
                     ArithmeticOperation.PLUS,
                     IntegerLiteral(6),
-                    ArithmeticExpression(
+                    TreeExpression(
                         ArithmeticOperation.PLUS,
                         IntegerLiteral(4),
-                        IntegerLiteral(10)
-                    )
+                        IntegerLiteral(10),
+                        IntegerType
+                    ),
+                    IntegerType
                 )
             )
         )
     }
 
     private fun evalIntegerExpression(position: SourcePosition, expression: Expression): Int {
-        val function = Function(
-            name = "foo",
+        val function = FunctionDeclaration(
+            identifier = "foo",
             params = listOf(),
             returnType = IntegerType,
             declarations = null,
-            block = Block(
-                operators = listOf(
+            compoundStatement = CompoundStatement(
+                statements = listOf(
                     Assignment(
                         Variable("foo", IntegerType),
                         expression
@@ -85,28 +88,29 @@ class Functions {
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()
-        return clazz.getMethod(function.name).invoke(null) as Int
+        return clazz.getMethod(function.identifier).invoke(null) as Int
     }
 
     @Test
     fun integerParameters() {
         val position = dummyPosition("IntegerParameters.pas")
-        val function = Function(
-            name = "foo",
+        val function = FunctionDeclaration(
+            identifier = "foo",
             params = listOf(
-                Parameter("x", IntegerType, Pass.VALUE),
-                Parameter("y", IntegerType, Pass.VALUE),
+                FormalParameter("x", IntegerType, Pass.VALUE),
+                FormalParameter("y", IntegerType, Pass.VALUE),
             ),
             returnType = IntegerType,
             declarations = null,
-            block = Block(
-                operators = listOf(
+            compoundStatement = CompoundStatement(
+                statements = listOf(
                     Assignment(
                         Variable("foo", IntegerType),
-                        ArithmeticExpression(
+                        TreeExpression(
                             ArithmeticOperation.PLUS,
                             Variable("x", IntegerType),
-                            Variable("y", IntegerType)
+                            Variable("y", IntegerType),
+                            IntegerType
                         )
                     )
                 )
@@ -119,11 +123,11 @@ class Functions {
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()
-        val r = clazz.getMethod(function.name, Int::class.java, Int::class.java).invoke(null, 5, 10)
+        val r = clazz.getMethod(function.identifier, Int::class.java, Int::class.java).invoke(null, 5, 10)
         assertEquals(15, r)
     }
 
-    private fun createProgram(position: SourcePosition, function: Function) =
+    private fun createProgram(position: SourcePosition, function: FunctionDeclaration) =
         Program(
             name = "MyProgram",
             uses = null,
@@ -131,7 +135,7 @@ class Functions {
                 functions = listOf(function),
                 variables = listOf()
             ),
-            block = Block(listOf()),
+            compoundStatement = CompoundStatement(listOf()),
             position = position
         )
 

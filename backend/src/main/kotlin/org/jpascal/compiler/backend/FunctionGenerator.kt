@@ -1,7 +1,7 @@
 package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.Function
+import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.objectweb.asm.MethodVisitor
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.objectweb.asm.Opcodes
@@ -9,17 +9,17 @@ import org.objectweb.asm.Opcodes
 class FunctionGenerator(
     private val context: Context,
     private val mv: MethodVisitor,
-    private val function: Function) {
+    private val function: FunctionDeclaration) {
 
     private var maxStack = 0
     private var maxLocals = function.params.size
 
     fun generate() {
-        function.block.operators.forEach {
+        function.compoundStatement.statements.forEach {
             when (it) {
                 is Assignment -> {
                     generateExpression(it.expression)
-                    if (it.variable.name == function.name) {
+                    if (it.variable.name == function.identifier) {
                         generateReturn()
                     } else {
                         TODO()
@@ -30,7 +30,7 @@ class FunctionGenerator(
         mv.visitMaxs(maxStack, maxLocals)
     }
 
-    private fun List<Parameter>.findIndexByName(name: String): Int? {
+    private fun List<FormalParameter>.findIndexByName(name: String): Int? {
         var i = 0
         while (i < size) {
             if (this[i].name == name) return i
@@ -58,7 +58,7 @@ class FunctionGenerator(
                     TODO()
                 }
             }
-            is ArithmeticExpression -> when (expression.op) {
+            is TreeExpression -> when (expression.op) {
                 ArithmeticOperation.PLUS -> {
                     generateExpression(expression.left)
                     generateExpression(expression.right)

@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":frontend"))
+    implementation(project(":frontend-api"))
 
     implementation("org.ow2.asm:asm:9.4")
     implementation("org.ow2.asm:asm-commons:9.4")

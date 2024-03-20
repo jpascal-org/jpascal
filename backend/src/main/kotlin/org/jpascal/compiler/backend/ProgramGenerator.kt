@@ -20,7 +20,7 @@ class ProgramGenerator(private val context: Context) {
         program.declarations?.functions?.forEach {
             val mv = cw.visitMethod(
                 Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
-                it.name,
+                it.identifier,
                 it.getJvmDescriptor(),
                 null,
                 null

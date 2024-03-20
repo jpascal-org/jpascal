@@ -1,6 +1,6 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.frontend.ir.Function
+import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.Program
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.Type
@@ -14,7 +14,7 @@ fun Type.toJvmType(): String =
         else -> TODO(this.toString())
     }
 
-fun Function.getJvmDescriptor(): String {
+fun FunctionDeclaration.getJvmDescriptor(): String {
     val sb = StringBuilder()
     sb.append("(")
     params.map {

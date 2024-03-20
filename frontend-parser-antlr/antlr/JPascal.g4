@@ -32,7 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*
 Adapted from pascal.g by  Hakki Dogusan, Piet Schoutteten and Marton Papp
 */
-
+/*
+Modified for JPascal by Vitaly Khudobakhshov
+*/
 // $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
 // $antlr-format allowShortRulesOnASingleLine false, allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
 
@@ -43,7 +45,7 @@ options {
 }
 
 program
-    : programHeading (INTERFACE)? block DOT EOF
+    : programHeading? (INTERFACE)? programBlock EOF
     ;
 
 programHeading
@@ -55,7 +57,7 @@ identifier
     : IDENT
     ;
 
-block
+programBlock
     : (
         labelDeclarationPart
         | constantDefinitionPart
@@ -64,6 +66,16 @@ block
         | procedureAndFunctionDeclarationPart
         | usesUnitsPart
         | IMPLEMENTATION
+    )* (compoundStatement DOT)?
+    ;
+
+procedureAndFunctionBlock
+    : (
+        labelDeclarationPart
+        | constantDefinitionPart
+        | typeDefinitionPart
+        | variableDeclarationPart
+        | procedureAndFunctionDeclarationPart
     )* compoundStatement
     ;
 
@@ -146,7 +158,6 @@ procedureType
 type_
     : simpleType
     | structuredType
-    | pointerType
     ;
 
 simpleType
@@ -245,10 +256,6 @@ fileType
     | FILE
     ;
 
-pointerType
-    : POINTER typeIdentifier
-    ;
-
 variableDeclarationPart
     : VAR variableDeclaration (SEMI variableDeclaration)* SEMI
     ;
@@ -267,7 +274,7 @@ procedureOrFunctionDeclaration
     ;
 
 procedureDeclaration
-    : PROCEDURE identifier (formalParameterList)? SEMI block
+    : PROCEDURE identifier (formalParameterList)? SEMI procedureAndFunctionBlock
     ;
 
 formalParameterList
@@ -294,7 +301,7 @@ constList
     ;
 
 functionDeclaration
-    : FUNCTION identifier (formalParameterList)? COLON resultType SEMI block
+    : FUNCTION identifier (formalParameterList)? COLON resultType SEMI procedureAndFunctionBlock
     ;
 
 resultType
@@ -319,16 +326,19 @@ simpleStatement
     ;
 
 assignmentStatement
-    : variable ASSIGN expression
+    : selector ASSIGN expression
     ;
 
-variable
-    : (AT identifier | identifier) (
-        LBRACK expression (COMMA expression)* RBRACK
-        | LBRACK2 expression (COMMA expression)* RBRACK2
-        | DOT identifier
-        | POINTER
-    )*
+//variable
+//    : (AT identifier | identifier) (
+//        LBRACK expression (COMMA expression)* RBRACK
+//        | LBRACK2 expression (COMMA expression)* RBRACK2
+//        | DOT identifier
+//    )*
+//    ;
+
+selector
+    : identifier (LBRACK expression (COMMA expression)* RBRACK)? (DOT selector)?
     ;
 
 expression
@@ -372,7 +382,8 @@ signedFactor
     ;
 
 factor
-    : variable
+//    : variable
+    : selector
     | LPAREN expression RPAREN
     | functionDesignator
     | unsignedConstant
@@ -439,7 +450,7 @@ structuredStatement
     : compoundStatement
     | conditionalStatement
     | repetetiveStatement
-    | withStatement
+//    | withStatement
     ;
 
 compoundStatement
@@ -497,13 +508,13 @@ finalValue
     : expression
     ;
 
-withStatement
-    : WITH recordVariableList DO statement
-    ;
-
-recordVariableList
-    : variable (COMMA variable)*
-    ;
+//withStatement
+//    : WITH recordVariableList DO statement
+//    ;
+//
+//recordVariableList
+//    : variable (COMMA variable)*
+//    ;
 
 AND
     : 'AND'
@@ -743,10 +754,6 @@ RBRACK
 
 RBRACK2
     : '.)'
-    ;
-
-POINTER
-    : '^'
     ;
 
 AT
