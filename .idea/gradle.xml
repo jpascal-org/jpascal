@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/frontend" />
             <option value="$PROJECT_DIR$/frontend-api" />
             <option value="$PROJECT_DIR$/frontend-parser-antlr" />
+            <option value="$PROJECT_DIR$/stdlib" />
           </set>
         </option>
       </GradleProjectSettings>

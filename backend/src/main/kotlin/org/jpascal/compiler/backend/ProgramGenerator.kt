@@ -5,7 +5,7 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 
-class ProgramGenerator(private val context: Context) {
+class ProgramGenerator {
     fun generate(program: Program): CompilationResult {
         val cw = ClassWriter(ClassWriter.COMPUTE_MAXS or ClassWriter.COMPUTE_FRAMES)
         val className = program.getJvmClassName()
@@ -25,7 +25,7 @@ class ProgramGenerator(private val context: Context) {
                 null,
                 null
             )
-            FunctionGenerator(context, mv, it).generate()
+            FunctionGenerator(mv, it).generate()
         }
         // FIXME: generate main
         return CompilationResult(className, cw.toByteArray())

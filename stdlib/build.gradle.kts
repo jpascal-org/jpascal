@@ -10,13 +10,6 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":frontend-api"))
-    implementation(project(":stdlib"))
-
-    implementation("org.ow2.asm:asm:9.4")
-    implementation("org.ow2.asm:asm-commons:9.4")
-    implementation("org.ow2.asm:asm-util:9.4")
-
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 
@@ -24,5 +17,5 @@ tasks.test {
     useJUnitPlatform()
 }
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(11)
 }

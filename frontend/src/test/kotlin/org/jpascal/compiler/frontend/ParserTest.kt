@@ -1,18 +1,14 @@
-package org.jpascal.compiler.frontend.parser
+package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.types.IntegerType
-import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
-import org.jpascal.compiler.frontend.parser.api.ParserFacade
 import org.jpascal.compiler.frontend.parser.api.Source
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class ParserTest {
-    private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
-
+class ParserTest : BaseFrontendTest()  {
     @Test
     fun helloWorld() {
         val parser = createParserFacade()

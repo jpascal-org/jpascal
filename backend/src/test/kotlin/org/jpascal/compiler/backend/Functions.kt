@@ -2,7 +2,6 @@ package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import java.io.File
 import kotlin.test.Test
@@ -27,8 +26,7 @@ class Functions {
             position = position
         )
         val program = createProgram(position, function)
-        val context = Context()
-        val generator = ProgramGenerator(context)
+        val generator = ProgramGenerator()
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()
@@ -83,8 +81,7 @@ class Functions {
             position = position
         )
         val program = createProgram(position, function)
-        val context = Context()
-        val generator = ProgramGenerator(context)
+        val generator = ProgramGenerator()
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()
@@ -118,8 +115,7 @@ class Functions {
             position = position
         )
         val program = createProgram(position, function)
-        val context = Context()
-        val generator = ProgramGenerator(context)
+        val generator = ProgramGenerator()
         val result = generator.generate(program)
         writeResult(result)
         val clazz = result.getClass()

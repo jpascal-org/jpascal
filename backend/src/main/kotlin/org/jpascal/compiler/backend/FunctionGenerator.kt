@@ -7,7 +7,6 @@ import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.objectweb.asm.Opcodes
 
 class FunctionGenerator(
-    private val context: Context,
     private val mv: MethodVisitor,
     private val function: FunctionDeclaration) {
 
@@ -15,19 +14,38 @@ class FunctionGenerator(
     private var maxLocals = function.params.size
 
     fun generate() {
-        function.compoundStatement.statements.forEach {
-            when (it) {
-                is Assignment -> {
-                    generateExpression(it.expression)
-                    if (it.variable.name == function.identifier) {
-                        generateReturn()
-                    } else {
-                        TODO()
-                    }
+        function.compoundStatement.statements.forEach(::generateStatement)
+        mv.visitMaxs(maxStack, maxLocals)
+    }
+
+    private fun generateStatement(statement: Statement) {
+        when (statement) {
+            is Assignment -> {
+                generateExpression(statement.expression)
+                if (statement.variable.name == function.identifier) {
+                    generateReturn()
+                } else {
+                    TODO()
                 }
             }
+            is FunctionStatement -> {
+                generateFunctionCall(statement.functionCall)
+            }
         }
-        mv.visitMaxs(maxStack, maxLocals)
+    }
+
+    private fun generateFunctionCall(functionCall: FunctionCall) {
+        val jvmSymbol = functionCall.resolved!!
+        functionCall.arguments.forEach {
+            generateExpression(it)
+        }
+        mv.visitMethodInsn(
+            Opcodes.INVOKESTATIC,
+            jvmSymbol.owner,
+            jvmSymbol.name,
+            jvmSymbol.descriptor,
+            false
+        )
     }
 
     private fun List<FormalParameter>.findIndexByName(name: String): Int? {
