@@ -19,6 +19,7 @@ class Functions {
             identifier = "foo",
             params = listOf(),
             returnType = IntegerType,
+            access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
                 statements = listOf(Assignment(Variable("foo", IntegerType), IntegerLiteral(4)))
@@ -69,6 +70,7 @@ class Functions {
             identifier = "foo",
             params = listOf(),
             returnType = IntegerType,
+            access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
                 statements = listOf(
@@ -98,6 +100,7 @@ class Functions {
                 FormalParameter("y", IntegerType, Pass.VALUE),
             ),
             returnType = IntegerType,
+            access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
                 statements = listOf(
@@ -125,8 +128,8 @@ class Functions {
 
     private fun createProgram(position: SourcePosition, function: FunctionDeclaration) =
         Program(
-            name = "MyProgram",
-            uses = null,
+            packageName = "MyProgram",
+            uses = listOf(),
             declarations = Declarations(
                 functions = listOf(function),
                 variables = listOf()

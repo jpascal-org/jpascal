@@ -21,8 +21,8 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             visitCompoundStatement(it)
         }
         program = Program(
-            name = ctx.programHeading()?.identifier()?.text,
-            uses = null,
+            packageName = ctx.packagePart()?.packageName()?.text,
+            uses = ctx.usesPart().map { it.usesSymbols().text },
             declarations = Declarations(functions = programBlock.functions, variables = listOf()),
             compoundStatement = compoundStatement ?: CompoundStatement(listOf()),
             position = ctx.position!!.let {
@@ -41,8 +41,8 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     }
 
     override fun visitProcedureAndFunctionDeclarationPart(ctx: JPascalParser.ProcedureAndFunctionDeclarationPartContext): FunctionDeclaration {
-        ctx.procedureOrFunctionDeclaration().functionDeclaration()?.let {
-            return visitFunctionDeclaration(it)
+        ctx.procedureOrFunctionDeclaration().functionDeclaration()?.let { functionDeclaration ->
+            return visitFunctionDeclaration(functionDeclaration)
         }
         TODO()
     }
@@ -73,11 +73,17 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         return result
     }
 
+    private fun visitNullableAccess(ctx: JPascalParser.AccessContext?): Access =
+        if (ctx != null) {
+            if (ctx.PROTECTED() != null) Access.PROTECTED else Access.PRIVATE
+        } else Access.PUBLIC
+
     override fun visitFunctionDeclaration(ctx: JPascalParser.FunctionDeclarationContext) =
         FunctionDeclaration(
             identifier = ctx.identifier().text,
             params = ctx.formalParameterList()?.asParameterList() ?: listOf(),
             returnType = ctx.resultType().typeIdentifier().asType(),
+            access = visitNullableAccess(ctx.access()),
             declarations = null,
             compoundStatement = visitCompoundStatement(ctx.procedureAndFunctionBlock().compoundStatement()),
             position = ctx.position!!.let {

@@ -16,7 +16,6 @@ class ParserTest : BaseFrontendTest()  {
             Source(
                 "HelloWorld.pas",
                 """
-                program HelloWorld;
                 begin
                     writeln('Hello World.');
                     readln;
@@ -49,6 +48,7 @@ class ParserTest : BaseFrontendTest()  {
                 FormalParameter(name = "y", type = IntegerType, pass = Pass.VALUE)
             ),
             returnType = IntegerType,
+            access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
                 listOf(
@@ -68,5 +68,52 @@ class ParserTest : BaseFrontendTest()  {
             )
         )
         assertEquals(func, program.declarations!!.functions[0])
+    }
+
+    @Test
+    fun packageAndUses() {
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "Example.pas",
+                """
+                package org.company;
+                
+                uses a.b.C;
+                uses a.b.d.*;
+                
+                begin
+                    writeln('Hello World.');
+                    readln;
+                end.
+                """.trimIndent()
+            )
+        )
+        assertEquals("org.company", program.packageName)
+        assertEquals(2, program.uses.size)
+        assertEquals("a.b.C", program.uses[0])
+        assertEquals("a.b.d.*", program.uses[1])
+    }
+
+    @Test
+    fun privateAndProtected() {
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "Example.pas",
+                """
+                private function foo(x, y: integer): integer;
+                begin
+                    foo := x + y;
+                end;
+                protected function bar(x, y: integer): integer;
+                begin
+                    bar := x + y;
+                end;    
+                """.trimIndent()
+            )
+        )
+        assertEquals(Access.PRIVATE, program.declarations!!.functions[0].access)
+        assertEquals(Access.PROTECTED, program.declarations!!.functions[1].access)
     }
 }

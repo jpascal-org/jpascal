@@ -1,8 +1,8 @@
 package org.jpascal.compiler.frontend.ir
 
 data class Program(
-    val name: String?,
-    val uses: Uses?,
+    val packageName: String?,
+    val uses: List<String>,
     val declarations: Declarations?,
     val compoundStatement: CompoundStatement,
     override val position: SourcePosition

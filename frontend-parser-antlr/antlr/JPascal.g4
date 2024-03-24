@@ -45,12 +45,15 @@ options {
 }
 
 program
-    : programHeading? (INTERFACE)? programBlock EOF
+    : packagePart? (usesPart)* programBlock EOF
     ;
 
-programHeading
-    : PROGRAM identifier (LPAREN identifierList RPAREN)? SEMI
-    | UNIT identifier SEMI
+packagePart
+    : PACKAGE packageName SEMI
+    ;
+
+packageName
+    : identifier (DOT identifier)*
     ;
 
 identifier
@@ -64,8 +67,6 @@ programBlock
         | typeDefinitionPart
         | variableDeclarationPart
         | procedureAndFunctionDeclarationPart
-        | usesUnitsPart
-        | IMPLEMENTATION
     )* (compoundStatement DOT)?
     ;
 
@@ -79,8 +80,12 @@ procedureAndFunctionBlock
     )* compoundStatement
     ;
 
-usesUnitsPart
-    : USES identifierList SEMI
+usesPart
+    : USES usesSymbols SEMI
+    ;
+
+usesSymbols
+    : packageName DOT (identifier | STAR)*
     ;
 
 labelDeclarationPart
@@ -268,13 +273,17 @@ procedureAndFunctionDeclarationPart
     : procedureOrFunctionDeclaration SEMI
     ;
 
+access
+    : (PRIVATE | PROTECTED)
+    ;
+
 procedureOrFunctionDeclaration
     : procedureDeclaration
     | functionDeclaration
     ;
 
 procedureDeclaration
-    : PROCEDURE identifier (formalParameterList)? SEMI procedureAndFunctionBlock
+    : access? PROCEDURE identifier (formalParameterList)? SEMI procedureAndFunctionBlock
     ;
 
 formalParameterList
@@ -301,7 +310,7 @@ constList
     ;
 
 functionDeclaration
-    : FUNCTION identifier (formalParameterList)? COLON resultType SEMI procedureAndFunctionBlock
+    : access? FUNCTION identifier (formalParameterList)? COLON resultType SEMI procedureAndFunctionBlock
     ;
 
 resultType
@@ -516,6 +525,14 @@ finalValue
 //    : variable (COMMA variable)*
 //    ;
 
+PRIVATE
+    : 'private'
+    ;
+
+PROTECTED
+    : 'protected'
+    ;
+
 AND
     : 'AND'
     ;
@@ -628,8 +645,8 @@ PROCEDURE
     : 'PROCEDURE'
     ;
 
-PROGRAM
-    : 'PROGRAM'
+PACKAGE
+    : 'PACKAGE'
     ;
 
 REAL
@@ -774,10 +791,6 @@ LCURLY
 
 RCURLY
     : '}'
-    ;
-
-UNIT
-    : 'UNIT'
     ;
 
 INTERFACE

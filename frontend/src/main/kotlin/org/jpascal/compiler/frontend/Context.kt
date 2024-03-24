@@ -1,9 +1,6 @@
 package org.jpascal.compiler.frontend
 
-import org.jpascal.compiler.frontend.ir.Expression
-import org.jpascal.compiler.frontend.ir.FunctionCall
-import org.jpascal.compiler.frontend.ir.FunctionStatement
-import org.jpascal.compiler.frontend.ir.Program
+import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.resolve.CollectStaticMethodsClassVisitor
 import org.jpascal.compiler.frontend.resolve.FunctionIsAlreadyDefinedError
 import org.jpascal.compiler.frontend.resolve.JvmMethod
@@ -15,6 +12,14 @@ class Context {
 
     fun listFunctions(): Map<String, JvmMethod> {
         return libraryFunctions
+    }
+
+//    private Program.getPackage() {
+//
+//    }
+
+    fun addProgram(program: Program) {
+
     }
 
     fun addSystemLibrary(className: String) {
@@ -32,15 +37,19 @@ class Context {
     private fun resolve(functionCall: FunctionCall) {
         libraryFunctions[functionCall.identifier]?.let {
             functionCall.resolved = it
-            functionCall.arguments.forEach { expression ->
-                resolve(expression)
-            }
+            functionCall.arguments.forEach(::resolve)
             return
         } ?: throw UnresolvedFunctionError(functionCall.identifier)
     }
 
     private fun resolve(expression: Expression) {
-
+        when (expression) {
+            is FunctionCall -> resolve(expression)
+            is TreeExpression -> {
+                resolve(expression.left)
+                resolve(expression.right)
+            }
+        }
     }
 
     fun resolve(program: Program) {

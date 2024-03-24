@@ -7,6 +7,7 @@ data class FunctionDeclaration(
     val identifier: String,
     val params: List<FormalParameter>,
     val returnType: Type,
+    val access: Access,
     val declarations: Declarations?,
     val compoundStatement: CompoundStatement,
     override val position: SourcePosition
