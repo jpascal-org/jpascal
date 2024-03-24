@@ -1,4 +1,4 @@
-package org.jpascal.compiler.backend
+package org.jpascal.compiler.common.ir
 
 import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.Program

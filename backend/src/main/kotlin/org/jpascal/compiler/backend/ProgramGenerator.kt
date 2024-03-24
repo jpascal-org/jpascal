@@ -1,5 +1,7 @@
 package org.jpascal.compiler.backend
 
+import org.jpascal.compiler.common.ir.getJvmClassName
+import org.jpascal.compiler.common.ir.getJvmDescriptor
 import org.jpascal.compiler.frontend.ir.Access
 import org.jpascal.compiler.frontend.ir.Program
 import org.objectweb.asm.ClassWriter
