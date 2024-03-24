@@ -1,5 +1,6 @@
 package org.jpascal.compiler.backend
 
+import org.jpascal.compiler.frontend.ir.Access
 import org.jpascal.compiler.frontend.ir.Program
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
@@ -19,7 +20,7 @@ class ProgramGenerator {
         )
         program.declarations?.functions?.forEach {
             val mv = cw.visitMethod(
-                Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
+                getAccessMask(it.access) or Opcodes.ACC_STATIC,
                 it.identifier,
                 it.getJvmDescriptor(),
                 null,
@@ -30,4 +31,11 @@ class ProgramGenerator {
         // FIXME: generate main
         return CompilationResult(className, cw.toByteArray())
     }
+
+    private fun getAccessMask(access: Access): Int =
+        when (access) {
+            Access.PUBLIC -> Opcodes.ACC_PUBLIC
+            Access.PROTECTED -> Opcodes.ACC_PROTECTED
+            Access.PRIVATE -> Opcodes.ACC_PRIVATE
+        }
 }
