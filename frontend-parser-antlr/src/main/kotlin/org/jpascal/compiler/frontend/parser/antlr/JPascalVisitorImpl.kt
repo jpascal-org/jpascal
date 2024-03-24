@@ -21,8 +21,8 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             visitCompoundStatement(it)
         }
         program = Program(
-            packageName = ctx.packagePart()?.packageName()?.text,
-            uses = ctx.usesPart().map { it.usesSymbols().text },
+            packageName = ctx.packagePart()?.fullyQualifiedName()?.text,
+            uses = ctx.usesPart().map(::visitUsesPart),
             declarations = Declarations(functions = programBlock.functions, variables = listOf()),
             compoundStatement = compoundStatement ?: CompoundStatement(listOf()),
             position = ctx.position!!.let {
@@ -31,6 +31,11 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         )
         return program
     }
+
+    override fun visitUsesPart(ctx: JPascalParser.UsesPartContext): Uses =
+        ctx.usesAs()?.let {
+            Uses(it.fullyQualifiedName().text, it.identifier().text)
+        } ?: Uses(ctx.usesSymbols()!!.text, null)
 
     override fun visitProgramBlock(ctx: JPascalParser.ProgramBlockContext): ProgramBlock {
         val functions = mutableListOf<FunctionDeclaration>()

@@ -49,10 +49,10 @@ program
     ;
 
 packagePart
-    : PACKAGE packageName SEMI
+    : PACKAGE fullyQualifiedName SEMI
     ;
 
-packageName
+fullyQualifiedName
     : identifier (DOT identifier)*
     ;
 
@@ -81,11 +81,15 @@ procedureAndFunctionBlock
     ;
 
 usesPart
-    : USES usesSymbols SEMI
+    : USES (usesSymbols | usesAs) SEMI
     ;
 
 usesSymbols
-    : packageName DOT (identifier | STAR)*
+    : fullyQualifiedName DOT (identifier | STAR)*
+    ;
+
+usesAs
+    : fullyQualifiedName AS identifier
     ;
 
 labelDeclarationPart
@@ -524,6 +528,10 @@ finalValue
 //recordVariableList
 //    : variable (COMMA variable)*
 //    ;
+
+AS
+    : 'as'
+    ;
 
 PRIVATE
     : 'private'

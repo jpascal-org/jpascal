@@ -81,6 +81,7 @@ class ParserTest : BaseFrontendTest()  {
                 
                 uses a.b.C;
                 uses a.b.d.*;
+                uses a.b.d.x as y;
                 
                 begin
                     writeln('Hello World.');
@@ -90,9 +91,10 @@ class ParserTest : BaseFrontendTest()  {
             )
         )
         assertEquals("org.company", program.packageName)
-        assertEquals(2, program.uses.size)
-        assertEquals("a.b.C", program.uses[0])
-        assertEquals("a.b.d.*", program.uses[1])
+        assertEquals(3, program.uses.size)
+        assertEquals(Uses("a.b.C", null), program.uses[0])
+        assertEquals(Uses("a.b.d.*", null), program.uses[1])
+        assertEquals(Uses("a.b.d.x", "y"), program.uses[2])
     }
 
     @Test
