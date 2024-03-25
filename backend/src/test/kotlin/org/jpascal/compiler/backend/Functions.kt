@@ -22,7 +22,7 @@ class Functions {
             access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
-                statements = listOf(Assignment(Variable("foo", IntegerType), IntegerLiteral(4)))
+                statements = listOf(ReturnStatement(IntegerLiteral(4)))
             ),
             position = position
         )
@@ -74,8 +74,7 @@ class Functions {
             declarations = null,
             compoundStatement = CompoundStatement(
                 statements = listOf(
-                    Assignment(
-                        Variable("foo", IntegerType),
+                    ReturnStatement(
                         expression
                     )
                 )
@@ -104,8 +103,7 @@ class Functions {
             declarations = null,
             compoundStatement = CompoundStatement(
                 statements = listOf(
-                    Assignment(
-                        Variable("foo", IntegerType),
+                    ReturnStatement(
                         TreeExpression(
                             ArithmeticOperation.PLUS,
                             Variable("x", IntegerType),

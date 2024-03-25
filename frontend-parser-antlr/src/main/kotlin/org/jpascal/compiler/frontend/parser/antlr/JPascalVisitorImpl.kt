@@ -120,6 +120,10 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
                 val call = visitProcedureStatement(it)
                 return FunctionStatement(call, label)
             }
+            stmt.returnStatement()?.let {
+                val expression = it.expression()?.let(::visitExpression)
+                return ReturnStatement(expression, label)
+            }
             TODO()
         }
         TODO()
@@ -196,8 +200,17 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.unsignedConstant()?.let {
             return visitUnsignedConstant(it)
         }
+        ctx.functionDesignator()?.let {
+            return visitFunctionDesignator(it)
+        }
         TODO()
     }
+
+    override fun visitFunctionDesignator(ctx: JPascalParser.FunctionDesignatorContext): FunctionCall =
+        FunctionCall(
+            ctx.identifier().text,
+            ctx.parameterList().actualParameter().map { visitExpression(it.expression()) }
+        )
 
     override fun visitUnsignedConstant(ctx: JPascalParser.UnsignedConstantContext): Expression {
         ctx.string()?.let {

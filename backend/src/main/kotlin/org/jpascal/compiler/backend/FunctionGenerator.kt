@@ -8,7 +8,8 @@ import org.objectweb.asm.Opcodes
 
 class FunctionGenerator(
     private val mv: MethodVisitor,
-    private val function: FunctionDeclaration) {
+    private val function: FunctionDeclaration
+) {
 
     private var maxStack = 0
     private var maxLocals = function.params.size
@@ -21,15 +22,14 @@ class FunctionGenerator(
     private fun generateStatement(statement: Statement) {
         when (statement) {
             is Assignment -> {
-                generateExpression(statement.expression)
-                if (statement.variable.name == function.identifier) {
-                    generateReturn()
-                } else {
-                    TODO()
-                }
+                TODO()
             }
-            is FunctionStatement -> {
-                generateFunctionCall(statement.functionCall)
+            is FunctionStatement -> generateFunctionCall(statement.functionCall)
+            is ReturnStatement -> {
+                statement.expression?.let {
+                    generateExpression(it)
+                }
+                generateReturn()
             }
         }
     }
@@ -68,6 +68,7 @@ class FunctionGenerator(
                 5 -> mv.visitInsn(Opcodes.ICONST_5)
                 else -> mv.visitIntInsn(Opcodes.BIPUSH, expression.value)
             }
+
             is Variable -> {
                 val index = function.params.findIndexByName(expression.name)
                 if (index != null) {
@@ -76,6 +77,7 @@ class FunctionGenerator(
                     TODO()
                 }
             }
+
             is TreeExpression -> when (expression.op) {
                 ArithmeticOperation.PLUS -> {
                     generateExpression(expression.left)
@@ -86,8 +88,10 @@ class FunctionGenerator(
                         TODO("Type=${expression.type}")
                     }
                 }
+
                 else -> TODO("Op=${expression.op}")
             }
+
             else -> TODO("Expression=$expression")
         }
     }

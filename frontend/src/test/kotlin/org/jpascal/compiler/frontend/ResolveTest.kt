@@ -58,4 +58,38 @@ class ResolveTest : BaseFrontendTest() {
             assertEquals("writeln", messages[0].arguments[0])
         }
     }
+
+    @Test
+    fun multipleFiles() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program1 = parser.parse(
+            Source(
+                "Program1.pas",
+                """
+                function foo(x: integer): integer;
+                begin
+                    return bar(x);
+                end;
+                """.trimIndent()
+            )
+        )
+        val program2 = parser.parse(
+            Source(
+                "Program2.pas",
+                """
+                function bar(x: integer): integer;
+                begin
+                    return foo(x);
+                end;
+                """.trimIndent()
+            )
+        )
+        context.addProgram(program1)
+        context.addProgram(program2)
+        context.resolve(program1)
+        context.resolve(program2)
+        assertEquals(0, messageCollector.getMessages().size)
+    }
 }

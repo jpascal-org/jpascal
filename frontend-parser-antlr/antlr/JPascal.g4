@@ -335,7 +335,12 @@ simpleStatement
     : assignmentStatement
     | procedureStatement
     | gotoStatement
+    | returnStatement
     | emptyStatement_
+    ;
+
+returnStatement
+    : RETURN expression?
     ;
 
 assignmentStatement
@@ -528,6 +533,10 @@ finalValue
 //recordVariableList
 //    : variable (COMMA variable)*
 //    ;
+
+RETURN
+    : 'return'
+    ;
 
 AS
     : 'as'
