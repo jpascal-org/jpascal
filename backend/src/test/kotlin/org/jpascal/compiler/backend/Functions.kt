@@ -3,6 +3,7 @@ package org.jpascal.compiler.backend
 import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.types.RealType
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,7 +14,7 @@ class Functions {
         SourcePosition(filename, Position(0, 0), Position(0, 0))
 
     @Test
-    fun returnIntegerLiteral() {
+    fun returnIntegerNumber() {
         val position = dummyPosition("ReturnIntegerLiteral.pas")
         val function = FunctionDeclaration(
             identifier = "foo",
@@ -22,7 +23,7 @@ class Functions {
             access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
-                statements = listOf(ReturnStatement(IntegerLiteral(4)))
+                statements = listOf(ReturnStatement(IntegerNumber(4)))
             ),
             position = position
         )
@@ -42,8 +43,8 @@ class Functions {
             14, evalIntegerExpression(
                 position, TreeExpression(
                     ArithmeticOperation.PLUS,
-                    IntegerLiteral(4),
-                    IntegerLiteral(10),
+                    IntegerNumber(4),
+                    IntegerNumber(10),
                     IntegerType
                 )
             )
@@ -52,11 +53,11 @@ class Functions {
             20, evalIntegerExpression(
                 position, TreeExpression(
                     ArithmeticOperation.PLUS,
-                    IntegerLiteral(6),
+                    IntegerNumber(6),
                     TreeExpression(
                         ArithmeticOperation.PLUS,
-                        IntegerLiteral(4),
-                        IntegerLiteral(10),
+                        IntegerNumber(4),
+                        IntegerNumber(10),
                         IntegerType
                     ),
                     IntegerType
@@ -69,7 +70,7 @@ class Functions {
         val function = FunctionDeclaration(
             identifier = "foo",
             params = listOf(),
-            returnType = IntegerType,
+            returnType = expression.type!!,
             access = Access.PUBLIC,
             declarations = null,
             compoundStatement = CompoundStatement(
@@ -92,28 +93,13 @@ class Functions {
     @Test
     fun integerParameters() {
         val position = dummyPosition("IntegerParameters.pas")
-        val function = FunctionDeclaration(
-            identifier = "foo",
-            params = listOf(
-                FormalParameter("x", IntegerType, Pass.VALUE),
-                FormalParameter("y", IntegerType, Pass.VALUE),
-            ),
-            returnType = IntegerType,
-            access = Access.PUBLIC,
-            declarations = null,
-            compoundStatement = CompoundStatement(
-                statements = listOf(
-                    ReturnStatement(
-                        TreeExpression(
-                            ArithmeticOperation.PLUS,
-                            Variable("x", IntegerType),
-                            Variable("y", IntegerType),
-                            IntegerType
-                        )
-                    )
-                )
-            ),
-            position = position
+        val function = createFunction(
+            TreeExpression(
+                ArithmeticOperation.PLUS,
+                Variable("x", IntegerType),
+                Variable("y", IntegerType),
+                IntegerType
+            ), position
         )
         val program = createProgram(position, function)
         val generator = ProgramGenerator()
@@ -122,6 +108,84 @@ class Functions {
         val clazz = result.getClass()
         val r = clazz.getMethod(function.identifier, Int::class.java, Int::class.java).invoke(null, 5, 10)
         assertEquals(15, r)
+    }
+
+    @Test
+    fun integerArithmetics() {
+        val position = dummyPosition("Arithmetics.pas")
+        val x = Variable("x", IntegerType)
+        val y = Variable("y", IntegerType)
+        val function = createFunction(
+            TreeExpression(
+                ArithmeticOperation.TIMES,
+                TreeExpression(ArithmeticOperation.PLUS, x, y, IntegerType),
+                TreeExpression(ArithmeticOperation.MINUS, x, IntegerNumber(5), IntegerType),
+                IntegerType
+            ), position
+        )
+        val program = createProgram(position, function)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod(function.identifier, Int::class.java, Int::class.java).invoke(null, 10, 6)
+        assertEquals((10 + 6) * (10 - 5), r)
+    }
+
+    @Test
+    fun realArithmetics() {
+        val position = dummyPosition("Arithmetics.pas")
+        val x = Variable("x", RealType)
+        val y = Variable("y", RealType)
+        val function = createFunction(
+            TreeExpression(
+                ArithmeticOperation.TIMES,
+                TreeExpression(ArithmeticOperation.PLUS, x, y, RealType),
+                TreeExpression(ArithmeticOperation.MINUS, x, RealNumber(5.0), RealType),
+                RealType
+            ), position
+        )
+        val program = createProgram(position, function)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod(function.identifier, Double::class.java, Double::class.java).invoke(null, 10.0, 6.0)
+        assertEquals((10.0 + 6.0) * (10.0 - 5.0), r)
+    }
+
+    private fun createFunction(expression: Expression, position: SourcePosition): FunctionDeclaration {
+        fun collectVariables(expression: Expression, acc: MutableList<Variable>) {
+            when (expression) {
+                is TreeExpression -> {
+                    collectVariables(expression.left, acc)
+                    collectVariables(expression.right, acc)
+                }
+
+                is Variable -> acc.add(expression)
+                is FunctionCall -> {
+                    expression.arguments.forEach { collectVariables(it, acc) }
+                }
+            }
+        }
+
+        val vars = mutableListOf<Variable>()
+        collectVariables(expression, vars)
+        return FunctionDeclaration(
+            identifier = "foo",
+            params = vars.toSet().sortedBy { it.name }.map { FormalParameter(it.name, it.type!!, Pass.VALUE) },
+            returnType = expression.type!!,
+            access = Access.PUBLIC,
+            declarations = null,
+            compoundStatement = CompoundStatement(
+                statements = listOf(
+                    ReturnStatement(
+                        expression
+                    )
+                )
+            ),
+            position = position
+        )
     }
 
     private fun createProgram(position: SourcePosition, function: FunctionDeclaration) =

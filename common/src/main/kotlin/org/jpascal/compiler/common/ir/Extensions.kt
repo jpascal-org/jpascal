@@ -3,6 +3,7 @@ package org.jpascal.compiler.common.ir
 import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.Program
 import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.types.RealType
 import org.jpascal.compiler.frontend.ir.types.Type
 import java.io.File
 
@@ -11,6 +12,7 @@ fun Program.getJvmClassName() = File(this.position.filename).nameWithoutExtensio
 fun Type.toJvmType(): String =
     when (this) {
         is IntegerType -> "I"
+        is RealType -> "D"
         else -> TODO(this.toString())
     }
 

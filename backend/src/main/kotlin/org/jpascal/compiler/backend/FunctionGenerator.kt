@@ -2,8 +2,10 @@ package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.FunctionDeclaration
+import org.jpascal.compiler.frontend.ir.types.BooleanType
 import org.objectweb.asm.MethodVisitor
 import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.types.RealType
 import org.objectweb.asm.Opcodes
 
 class FunctionGenerator(
@@ -24,6 +26,7 @@ class FunctionGenerator(
             is Assignment -> {
                 TODO()
             }
+
             is FunctionStatement -> generateFunctionCall(statement.functionCall)
             is ReturnStatement -> {
                 statement.expression?.let {
@@ -50,16 +53,30 @@ class FunctionGenerator(
 
     private fun List<FormalParameter>.findIndexByName(name: String): Int? {
         var i = 0
+        var jvmIndex = 0
         while (i < size) {
-            if (this[i].name == name) return i
-            i++
+            if (this[i].name == name) return jvmIndex
+            when (this[i++].type) {
+                IntegerType, BooleanType -> jvmIndex++
+                RealType -> jvmIndex += 2
+            }
         }
         return null
     }
 
+    private fun generateArithmetics(expression: TreeExpression, iop: Int, dop: Int) {
+        generateExpression(expression.left)
+        generateExpression(expression.right)
+        when (expression.type) {
+            IntegerType -> mv.visitInsn(iop)
+            RealType -> mv.visitInsn(dop)
+            else -> TODO("Type=${expression.type}")
+        }
+    }
+
     private fun generateExpression(expression: Expression) {
         when (expression) {
-            is IntegerLiteral -> when (expression.value) {
+            is IntegerNumber -> when (expression.value) {
                 0 -> mv.visitInsn(Opcodes.ICONST_0)
                 1 -> mv.visitInsn(Opcodes.ICONST_1)
                 2 -> mv.visitInsn(Opcodes.ICONST_2)
@@ -69,26 +86,29 @@ class FunctionGenerator(
                 else -> mv.visitIntInsn(Opcodes.BIPUSH, expression.value)
             }
 
+            is RealNumber -> when (expression.value) {
+                0.0 -> mv.visitInsn(Opcodes.DCONST_0)
+                1.0 -> mv.visitInsn(Opcodes.DCONST_1)
+                else -> mv.visitLdcInsn(expression.value)
+            }
+
             is Variable -> {
                 val index = function.params.findIndexByName(expression.name)
                 if (index != null) {
-                    mv.visitVarInsn(Opcodes.ILOAD, index)
+                    when (expression.type) {
+                        is IntegerType -> mv.visitVarInsn(Opcodes.ILOAD, index)
+                        is RealType -> mv.visitVarInsn(Opcodes.DLOAD, index)
+                        else -> TODO()
+                    }
                 } else {
                     TODO()
                 }
             }
 
             is TreeExpression -> when (expression.op) {
-                ArithmeticOperation.PLUS -> {
-                    generateExpression(expression.left)
-                    generateExpression(expression.right)
-                    if (expression.type == IntegerType) {
-                        mv.visitInsn(Opcodes.IADD)
-                    } else {
-                        TODO("Type=${expression.type}")
-                    }
-                }
-
+                ArithmeticOperation.PLUS -> generateArithmetics(expression, Opcodes.IADD, Opcodes.DADD)
+                ArithmeticOperation.MINUS -> generateArithmetics(expression, Opcodes.ISUB, Opcodes.DSUB)
+                ArithmeticOperation.TIMES -> generateArithmetics(expression, Opcodes.IMUL, Opcodes.DMUL)
                 else -> TODO("Op=${expression.op}")
             }
 
@@ -99,6 +119,7 @@ class FunctionGenerator(
     private fun generateReturn() {
         when (function.returnType) {
             IntegerType -> mv.visitInsn(Opcodes.IRETURN)
+            RealType -> mv.visitInsn(Opcodes.DRETURN)
             else -> TODO()
         }
     }
