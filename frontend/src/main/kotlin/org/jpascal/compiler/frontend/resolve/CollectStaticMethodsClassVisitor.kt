@@ -28,13 +28,9 @@ class CollectStaticMethodsClassVisitor : ClassVisitor(Opcodes.ASM9) {
         signature: String?,
         exceptions: Array<out String>?
     ): MethodVisitor? {
-        methods.add(
-            JvmMethod(
-                className,
-                name,
-                descriptor
-            )
-        )
+        if (access and Opcodes.ACC_PUBLIC > 0) {
+            methods.add(JvmMethod(className, name, descriptor))
+        }
         return null
     }
 }

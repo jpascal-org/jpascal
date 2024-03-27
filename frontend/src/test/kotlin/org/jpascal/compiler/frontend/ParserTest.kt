@@ -8,7 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class ParserTest : BaseFrontendTest()  {
+class ParserTest : BaseFrontendTest() {
     @Test
     fun helloWorld() {
         val parser = createParserFacade()
@@ -28,6 +28,9 @@ class ParserTest : BaseFrontendTest()  {
 
     @Test
     fun simpleFunction() {
+        fun mkPosition(start: Position, end: Position): SourcePosition =
+            SourcePosition("SimpleFunction.pas", start, end)
+
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
@@ -49,25 +52,31 @@ class ParserTest : BaseFrontendTest()  {
             ),
             returnType = IntegerType,
             access = Access.PUBLIC,
-            declarations = null,
+            declarations = Declarations(),
             compoundStatement = CompoundStatement(
                 listOf(
                     Assignment(
-                        variable = Variable("foo"),
+                        variable = Variable(
+                            "foo",
+                            position = mkPosition(Position(3, 5), Position(3, 8))
+                        ),
                         expression = TreeExpression(
                             op = ArithmeticOperation.PLUS,
-                            left = Variable("x"),
-                            right = Variable("y")
-                        )
+                            left = Variable("x", position = mkPosition(Position(3, 12), Position(3, 13))),
+                            right = Variable("y", position = mkPosition(Position(3, 16), Position(3, 17))),
+                            position = mkPosition(Position(3, 12), Position(3, 17))
+                        ),
+                        position = mkPosition(Position(3, 5), Position(3, 17))
                     )
-                )
+                ),
+                position = mkPosition(Position(2, 1), Position(4, 4))
             ),
             position = SourcePosition(
                 "SimpleFunction.pas",
                 start = Position(1, 1), end = Position(4, 4)
             )
         )
-        assertEquals(func, program.declarations!!.functions[0])
+        assertEquals(func, program.declarations.functions[0])
     }
 
     @Test
@@ -115,7 +124,7 @@ class ParserTest : BaseFrontendTest()  {
                 """.trimIndent()
             )
         )
-        assertEquals(Access.PRIVATE, program.declarations!!.functions[0].access)
-        assertEquals(Access.PROTECTED, program.declarations!!.functions[1].access)
+        assertEquals(Access.PRIVATE, program.declarations.functions[0].access)
+        assertEquals(Access.PROTECTED, program.declarations.functions[1].access)
     }
 }

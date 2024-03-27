@@ -1,5 +1,6 @@
 package org.jpascal.compiler.frontend.parser.antlr
 
+import org.antlr.v4.kotlinruntime.ast.Position
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.types.*
@@ -25,9 +26,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             uses = ctx.usesPart().map(::visitUsesPart),
             declarations = Declarations(functions = programBlock.functions, variables = listOf()),
             compoundStatement = compoundStatement ?: CompoundStatement(listOf()),
-            position = ctx.position!!.let {
-                SourcePosition(filename, it.start.toPosition(), it.end.toPosition())
-            }
+            position = mkPosition(ctx.position)
         )
         return program
     }
@@ -89,18 +88,20 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             params = ctx.formalParameterList()?.asParameterList() ?: listOf(),
             returnType = ctx.resultType().typeIdentifier().asType(),
             access = visitNullableAccess(ctx.access()),
-            declarations = null,
+            declarations = Declarations(),
             compoundStatement = visitCompoundStatement(ctx.procedureAndFunctionBlock().compoundStatement()),
-            position = ctx.position!!.let {
-                SourcePosition(filename, it.start.toPosition(), it.end.toPosition())
-            }
+            position = mkPosition(ctx.position)
         )
+
+    private fun mkPosition(position: Position?): SourcePosition? =
+        position?.let { SourcePosition(filename, position.start.toPosition(), position.end.toPosition()) }
 
     override fun visitCompoundStatement(ctx: JPascalParser.CompoundStatementContext): CompoundStatement =
         CompoundStatement(
             ctx.statements().statement().mapNotNull {
                 visitStatement(it)
-            }
+            },
+            position = mkPosition(ctx.position)
         )
 
     override fun visitStatement(ctx: JPascalParser.StatementContext): Statement? {
@@ -109,11 +110,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.assignmentStatement()?.let {
                 val expression = visitExpression(it.expression())
                 val variable = visitSelector(it.selector())
-                return Assignment(
-                    variable = variable,
-                    expression = expression,
-                    label = label
-                )
+                return Assignment(variable, expression, label, mkPosition(ctx.position))
             }
             stmt.emptyStatement_()?.let { return null }
             stmt.procedureStatement()?.let {
@@ -122,7 +119,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             }
             stmt.returnStatement()?.let {
                 val expression = it.expression()?.let(::visitExpression)
-                return ReturnStatement(expression, label)
+                return ReturnStatement(expression, label, mkPosition(ctx.position))
             }
             TODO()
         }
@@ -133,13 +130,13 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         val args = ctx.parameterList()?.actualParameter()?.map {
             visitExpression(it.expression())
         } ?: listOf()
-        return FunctionCall(ctx.identifier().text, args)
+        return FunctionCall(ctx.identifier().text, args, mkPosition(ctx.position))
     }
 
     override fun visitSelector(ctx: JPascalParser.SelectorContext): Variable {
         if (ctx.LBRACK() != null) TODO()
         if (ctx.DOT() != null) TODO()
-        return Variable(ctx.identifier().text)
+        return Variable(ctx.identifier().text, mkPosition(ctx.position))
     }
 
     override fun visitAdditiveoperator(ctx: JPascalParser.AdditiveoperatorContext): Operation {
@@ -161,7 +158,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.relationaloperator()?.let { operator ->
             val op = visitRelationaloperator(operator)
             val right = visitExpression(ctx.expression()!!)
-            return TreeExpression(op, left, right)
+            return TreeExpression(op, left, right, mkPosition(ctx.position))
         }
         return left
     }
@@ -171,7 +168,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.additiveoperator()?.let { operator ->
             val op = visitAdditiveoperator(operator)
             val right = visitSimpleExpression(ctx.simpleExpression()!!)
-            return TreeExpression(op, left, right)
+            return TreeExpression(op, left, right, mkPosition(ctx.position))
         }
         return left
     }
@@ -181,14 +178,14 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.multiplicativeoperator()?.let { operator ->
             val op = visitMultiplicativeoperator(operator)
             val right = visitTerm(ctx.term()!!)
-            return TreeExpression(op, left, right)
+            return TreeExpression(op, left, right, mkPosition(ctx.position))
         }
         return left
     }
 
     override fun visitSignedFactor(ctx: JPascalParser.SignedFactorContext): Expression {
         ctx.MINUS()?.let {
-            return UnaryExpression(ArithmeticOperation.UNARY_MINUS, visitFactor(ctx.factor()))
+            return UnaryExpression(ArithmeticOperation.UNARY_MINUS, visitFactor(ctx.factor()), mkPosition(ctx.position))
         }
         return visitFactor(ctx.factor())
     }
@@ -209,12 +206,13 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     override fun visitFunctionDesignator(ctx: JPascalParser.FunctionDesignatorContext): FunctionCall =
         FunctionCall(
             ctx.identifier().text,
-            ctx.parameterList().actualParameter().map { visitExpression(it.expression()) }
+            ctx.parameterList().actualParameter().map { visitExpression(it.expression()) },
+            mkPosition(ctx.position)
         )
 
     override fun visitUnsignedConstant(ctx: JPascalParser.UnsignedConstantContext): Expression {
         ctx.string()?.let {
-            return StringLiteral(it.text.substring(1, it.text.length - 1))
+            return StringLiteral(it.text.substring(1, it.text.length - 1), mkPosition(ctx.position))
         }
         TODO()
     }

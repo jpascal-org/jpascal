@@ -7,7 +7,7 @@ import org.jpascal.compiler.frontend.ir.types.RealType
 import org.jpascal.compiler.frontend.ir.types.Type
 import java.io.File
 
-fun Program.getJvmClassName() = File(this.position.filename).nameWithoutExtension
+fun Program.getJvmClassName() = File(this.position!!.filename).nameWithoutExtension
 
 fun Type.toJvmType(): String =
     when (this) {

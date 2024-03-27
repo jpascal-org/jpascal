@@ -3,9 +3,9 @@ package org.jpascal.compiler.common
 class MessageCollector {
     private val messages = mutableListOf<Message>()
 
-    fun addMessage(message: Message) {
+    fun add(message: Message) {
         messages.add(message)
     }
 
-    fun getMessages(): List<Message> = messages
+    fun list(): List<Message> = messages
 }

@@ -21,7 +21,7 @@ class Functions {
             params = listOf(),
             returnType = IntegerType,
             access = Access.PUBLIC,
-            declarations = null,
+            declarations = Declarations(),
             compoundStatement = CompoundStatement(
                 statements = listOf(ReturnStatement(IntegerNumber(4)))
             ),
@@ -45,7 +45,7 @@ class Functions {
                     ArithmeticOperation.PLUS,
                     IntegerNumber(4),
                     IntegerNumber(10),
-                    IntegerType
+                    type = IntegerType
                 )
             )
         )
@@ -58,9 +58,9 @@ class Functions {
                         ArithmeticOperation.PLUS,
                         IntegerNumber(4),
                         IntegerNumber(10),
-                        IntegerType
+                        type = IntegerType
                     ),
-                    IntegerType
+                    type = IntegerType
                 )
             )
         )
@@ -72,7 +72,7 @@ class Functions {
             params = listOf(),
             returnType = expression.type!!,
             access = Access.PUBLIC,
-            declarations = null,
+            declarations = Declarations(),
             compoundStatement = CompoundStatement(
                 statements = listOf(
                     ReturnStatement(
@@ -96,9 +96,9 @@ class Functions {
         val function = createFunction(
             TreeExpression(
                 ArithmeticOperation.PLUS,
-                Variable("x", IntegerType),
-                Variable("y", IntegerType),
-                IntegerType
+                Variable("x", type = IntegerType),
+                Variable("y", type = IntegerType),
+                type = IntegerType
             ), position
         )
         val program = createProgram(position, function)
@@ -113,14 +113,14 @@ class Functions {
     @Test
     fun integerArithmetics() {
         val position = dummyPosition("Arithmetics.pas")
-        val x = Variable("x", IntegerType)
-        val y = Variable("y", IntegerType)
+        val x = Variable("x", type = IntegerType)
+        val y = Variable("y", type = IntegerType)
         val function = createFunction(
             TreeExpression(
                 ArithmeticOperation.TIMES,
-                TreeExpression(ArithmeticOperation.PLUS, x, y, IntegerType),
-                TreeExpression(ArithmeticOperation.MINUS, x, IntegerNumber(5), IntegerType),
-                IntegerType
+                TreeExpression(ArithmeticOperation.PLUS, x, y, type = IntegerType),
+                TreeExpression(ArithmeticOperation.MINUS, x, IntegerNumber(5), type = IntegerType),
+                type = IntegerType
             ), position
         )
         val program = createProgram(position, function)
@@ -135,14 +135,14 @@ class Functions {
     @Test
     fun realArithmetics() {
         val position = dummyPosition("Arithmetics.pas")
-        val x = Variable("x", RealType)
-        val y = Variable("y", RealType)
+        val x = Variable("x", type = RealType)
+        val y = Variable("y", type = RealType)
         val function = createFunction(
             TreeExpression(
                 ArithmeticOperation.TIMES,
-                TreeExpression(ArithmeticOperation.PLUS, x, y, RealType),
-                TreeExpression(ArithmeticOperation.MINUS, x, RealNumber(5.0), RealType),
-                RealType
+                TreeExpression(ArithmeticOperation.PLUS, x, y, type = RealType),
+                TreeExpression(ArithmeticOperation.MINUS, x, RealNumber(5.0), type = RealType),
+                type = RealType
             ), position
         )
         val program = createProgram(position, function)
@@ -176,7 +176,7 @@ class Functions {
             params = vars.toSet().sortedBy { it.name }.map { FormalParameter(it.name, it.type!!, Pass.VALUE) },
             returnType = expression.type!!,
             access = Access.PUBLIC,
-            declarations = null,
+            declarations = Declarations(),
             compoundStatement = CompoundStatement(
                 statements = listOf(
                     ReturnStatement(

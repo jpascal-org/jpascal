@@ -20,7 +20,7 @@ class ProgramGenerator {
             Type.getInternalName(Object::class.java),
             null
         )
-        program.declarations?.functions?.forEach {
+        program.declarations.functions.forEach {
             val mv = cw.visitMethod(
                 getAccessMask(it.access) or Opcodes.ACC_STATIC,
                 it.identifier,

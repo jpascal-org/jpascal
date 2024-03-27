@@ -1,41 +1,46 @@
 package org.jpascal.compiler.frontend.resolve
 
-import org.jpascal.compiler.common.Message
 import org.jpascal.compiler.common.MessageCollector
-import org.jpascal.compiler.common.MessageLevel
 import org.jpascal.compiler.common.ir.getJvmClassName
 import org.jpascal.compiler.common.ir.getJvmDescriptor
-import org.jpascal.compiler.frontend.*
 import org.jpascal.compiler.frontend.ir.*
+import org.jpascal.compiler.frontend.ir.types.*
+import org.jpascal.compiler.frontend.resolve.messages.*
 import org.objectweb.asm.ClassReader
 
 class Context(private val messageCollector: MessageCollector) {
-    private val resolvedFunctions = mutableMapOf<String, JvmMethod>()
+    private val externalFunctions = mutableMapOf<String, MutableList<JvmMethod>>()
 
-    fun listFunctions(): Map<String, JvmMethod> {
-        return resolvedFunctions
-    }
+    private fun JvmMethod.getTypeSignature(): String = descriptor.substring(1, descriptor.indexOf(')'))
+    private fun JvmMethod.getReturnType(): Type =
+        when (val returnType = descriptor.substring(descriptor.indexOf(')') + 1)) {
+            "I" -> IntegerType
+            "D" -> RealType
+            "V" -> UnitType
+            else -> TODO("type=$returnType")
+        }
 
-    fun addProgram(program: Program) {
-        program.declarations?.functions?.forEach { func ->
+    fun add(program: Program) {
+        // TODO: add uses
+        program.declarations.functions.forEach { func ->
             val className = program.getJvmClassName()
-            val method = JvmMethod(
+            val jvmMethod = JvmMethod(
                 owner = program.packageName?.let { "$it.$className" } ?: className,
                 name = func.identifier,
                 descriptor = func.getJvmDescriptor()
             )
-            tryToResolve(func.identifier, method)
+            func.jvmMethod = jvmMethod
+            addToExternal(func.identifier, jvmMethod)
         }
     }
 
-    private fun tryToResolve(functionName: String, jvmMethod: JvmMethod) {
-        // TODO: overloaded functions are not supported
-        resolvedFunctions[functionName]?.let {
-            messageCollector.addMessage(
-                Message(FrontendMessages.FUNCTION_IS_ALREADY_DEFINED, MessageLevel.ERROR, null, jvmMethod)
-            )
+    private fun addToExternal(functionName: String, jvmMethod: JvmMethod) {
+        val externals = externalFunctions.getOrPut(functionName) { mutableListOf() }
+        externals.find { it.getTypeSignature() == jvmMethod.getTypeSignature() }?.let {
+            messageCollector.add(FunctionIsAlreadyDefinedMessage(functionName, it, null))
+            return
         }
-        resolvedFunctions[functionName] = jvmMethod
+        externals.add(jvmMethod)
     }
 
     fun addSystemLibrary(className: String) {
@@ -43,35 +48,131 @@ class Context(private val messageCollector: MessageCollector) {
         val cv = CollectStaticMethodsClassVisitor()
         cr.accept(cv, 0)
         cv.listMethods().forEach {
-            tryToResolve(it.name, it)
+            addToExternal(it.name, it)
         }
     }
 
-    private fun resolve(functionCall: FunctionCall) {
-        resolvedFunctions[functionCall.identifier]?.let {
-            functionCall.resolved = it
-        } ?: messageCollector.addMessage(
-            Message(FrontendMessages.CANNOT_RESOLVE_FUNCTION, MessageLevel.ERROR, null, functionCall.identifier)
-        )
-        functionCall.arguments.forEach(::resolve)
+    private fun resolve(functionCall: FunctionCall, scope: Scope) {
+        scope.findFunctionCandidates(functionCall.identifier)?.let {
+            if (it.size == 1) {
+                functionCall.resolved = it[0]
+                functionCall.type = it[0].getReturnType()
+            } else {
+                TODO()
+            }
+        } ?: messageCollector.add(CannotResolveFunctionMessage(functionCall.identifier, functionCall.position))
+        functionCall.arguments.forEach { resolve(it, scope) }
     }
 
-    private fun resolve(expression: Expression) {
+    private fun resolve(variable: Variable, scope: Scope) {
+        val decl = scope.findVariable(variable.name)
+        if (decl == null) {
+            messageCollector.add(VariableIsNotDefinedMessage(variable.name, variable.position))
+        } else {
+            variable.type = decl.type
+        }
+    }
+
+    private fun resolve(expression: Expression, scope: Scope) {
         when (expression) {
-            is FunctionCall -> resolve(expression)
+            is FunctionCall -> resolve(expression, scope)
             is TreeExpression -> {
-                resolve(expression.left)
-                resolve(expression.right)
+                resolve(expression.left, scope)
+                resolve(expression.right, scope)
+                expression.type = getExpressionType(expression)
+            }
+            is Variable -> resolve(expression, scope)
+        }
+//        if (expression.type == null) TODO("expr=$expression")
+    }
+
+    private fun Type.isNumeric() =
+        when (this) {
+            is IntType -> true
+            is RealType -> true
+            else -> false
+        }
+
+    private fun getExpressionType(expression: TreeExpression): Type {
+        val (op, left, right) = expression
+        val leftType = left.type!!
+        val rightType = right.type!!
+        return when (op) {
+            ArithmeticOperation.PLUS,
+            ArithmeticOperation.MINUS,
+            ArithmeticOperation.TIMES -> {
+                if (!leftType.isNumeric()) {
+                    messageCollector.add(ExpectedNumericOperandMessage(leftType, left.position))
+                }
+                if (!rightType.isNumeric()) {
+                    messageCollector.add(ExpectedNumericOperandMessage(rightType, right.position))
+                }
+                // TODO: more types => more checks
+                if (leftType == RealType || rightType == RealType) RealType else leftType
+            }
+
+            else -> TODO()
+        }
+    }
+
+
+    private fun resolve(compoundStatement: CompoundStatement, scope: Scope) {
+        compoundStatement.statements.forEach {
+            when (it) {
+                is FunctionStatement -> resolve(it.functionCall, scope)
+                is Assignment -> resolve(it, scope)
+                is ReturnStatement -> resolve(it, scope)
+                else -> TODO("stmt=$it")
             }
         }
+    }
+
+    private fun Type.isAssignableFrom(type: Type): Boolean {
+        if (this == type) return true
+        if (this == RealType && type.isNumeric()) return true
+        return false
+    }
+
+    private fun resolve(returnStatement: ReturnStatement, scope: Scope) {
+        returnStatement.expression?.let {
+            resolve(it, scope)
+            if (it.type != null && it.type != scope.returnType) {
+                messageCollector.add(ExpectedTypeMessage(scope.returnType, it.type!!, returnStatement.position))
+            }
+        } ?: if (scope.returnType != UnitType) {
+            messageCollector.add(ExpectedTypeMessage(UnitType, scope.returnType, returnStatement.position))
+        } else {
+        }
+    }
+
+    private fun resolve(assignment: Assignment, scope: Scope) {
+        resolve(assignment.variable, scope)
+        resolve(assignment.expression, scope)
+        assignment.expression.type?.let { expressionType ->
+            assignment.variable.type?.let { variableType ->
+                if (!variableType.isAssignableFrom(expressionType)) {
+                    messageCollector.add(
+                        TypeIsNotAssignableMessage(
+                            variableType,
+                            expressionType,
+                            assignment.position
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun resolve(functionDeclaration: FunctionDeclaration, scope: Scope) {
+        // TODO: support nested functions
+        resolve(functionDeclaration.compoundStatement, scope.join(functionDeclaration))
     }
 
     fun resolve(program: Program) {
-        program.compoundStatement.statements.forEach {
-            when (it) {
-                is FunctionStatement -> resolve(it.functionCall)
-                else -> TODO()
-            }
+        val scope = Scope(program.declarations.copy(functions = listOf()), externalFunctions, UnitType)
+        program.declarations.functions.forEach {
+            resolve(it, scope)
         }
+        resolve(program.compoundStatement, scope)
     }
 }

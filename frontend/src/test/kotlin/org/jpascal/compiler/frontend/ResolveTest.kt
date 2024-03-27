@@ -3,10 +3,12 @@ package org.jpascal.compiler.frontend
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.FunctionStatement
 import org.jpascal.compiler.frontend.parser.api.Source
+import org.jpascal.compiler.frontend.resolve.messages.CannotResolveFunctionMessage
 import org.jpascal.compiler.frontend.resolve.Context
 import org.jpascal.compiler.frontend.resolve.JvmMethod
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ResolveTest : BaseFrontendTest() {
     @Test
@@ -52,10 +54,10 @@ class ResolveTest : BaseFrontendTest() {
             )
         )
         context.resolve(program)
-        messageCollector.getMessages().let { messages ->
+        messageCollector.list().let { messages ->
             assertEquals(1, messages.size)
-            assertEquals(FrontendMessages.CANNOT_RESOLVE_FUNCTION, messages[0].code)
-            assertEquals("writeln", messages[0].arguments[0])
+            assertTrue(messages[0] is CannotResolveFunctionMessage)
+            assertEquals("writeln", (messages[0] as CannotResolveFunctionMessage).functionName)
         }
     }
 
@@ -86,10 +88,13 @@ class ResolveTest : BaseFrontendTest() {
                 """.trimIndent()
             )
         )
-        context.addProgram(program1)
-        context.addProgram(program2)
+        context.add(program1)
+        context.add(program2)
         context.resolve(program1)
         context.resolve(program2)
-        assertEquals(0, messageCollector.getMessages().size)
+        messageCollector.list().forEach {
+            println(it)
+        }
+        assertEquals(0, messageCollector.list().size)
     }
 }

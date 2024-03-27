@@ -6,5 +6,6 @@ data class TreeExpression(
     val op: Operation,
     val left: Expression,
     val right: Expression,
+    override val position: SourcePosition? = null,
     override var type: Type? = null
 ) : Expression
