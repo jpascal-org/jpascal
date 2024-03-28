@@ -214,6 +214,12 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.string()?.let {
             return StringLiteral(it.text.substring(1, it.text.length - 1), mkPosition(ctx.position))
         }
+        ctx.unsignedNumber()?.unsignedInteger()?.let {
+            return IntegerNumber(it.text.toInt(), mkPosition(ctx.position))
+        }
+        ctx.unsignedNumber()?.unsignedReal()?.let {
+            return RealNumber(it.text.toDouble(), mkPosition(ctx.position))
+        }
         TODO()
     }
 }
