@@ -72,11 +72,22 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     }
 
     override fun visitProcedureAndFunctionDeclarationPart(ctx: JPascalParser.ProcedureAndFunctionDeclarationPartContext): FunctionDeclaration {
-        ctx.procedureOrFunctionDeclaration().functionDeclaration()?.let { functionDeclaration ->
-            return visitFunctionDeclaration(functionDeclaration)
-        }
-        TODO()
+        val decl = ctx.procedureOrFunctionDeclaration()
+        return decl.functionDeclaration()?.let {
+            visitFunctionDeclaration(it)
+        } ?: visitProcedureDeclaration(decl.procedureDeclaration()!!)
     }
+
+    override fun visitProcedureDeclaration(ctx: JPascalParser.ProcedureDeclarationContext): FunctionDeclaration =
+        FunctionDeclaration(
+            identifier = ctx.identifier().text,
+            params = ctx.formalParameterList()?.asParameterList() ?: listOf(),
+            returnType = UnitType,
+            access = visitNullableAccess(ctx.access()),
+            declarations = Declarations(),
+            compoundStatement = visitCompoundStatement(ctx.procedureAndFunctionBlock().compoundStatement()),
+            position = mkPosition(ctx.position)
+        )
 
     private fun JPascalParser.TypeIdentifierContext.asType(): Type {
         if (CHAR() != null) return CharType

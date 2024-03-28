@@ -3,13 +3,12 @@ package org.jpascal.compiler.frontend
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.FunctionStatement
 import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.types.RealType
 import org.jpascal.compiler.frontend.ir.types.StringType
 import org.jpascal.compiler.frontend.parser.api.Source
-import org.jpascal.compiler.frontend.resolve.messages.CannotResolveFunctionMessage
 import org.jpascal.compiler.frontend.resolve.Context
 import org.jpascal.compiler.frontend.resolve.JvmMethod
-import org.jpascal.compiler.frontend.resolve.messages.TypeIsNotAssignableMessage
-import org.jpascal.compiler.frontend.resolve.messages.VariableIsNotDefinedMessage
+import org.jpascal.compiler.frontend.resolve.messages.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -151,4 +150,83 @@ class ResolveTest : BaseFrontendTest() {
             assertEquals(StringType, message.rhsType)
         }
     }
+
+    @Test
+    fun incompatibleReturnType() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "IncompatibleReturnType.pas",
+                """
+                function foo(x: real): integer;
+                begin
+                    return x;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        messageCollector.list().let {
+            assertEquals(1, it.size)
+            assertTrue(it[0] is TypeIsNotAssignableMessage)
+            val message = it[0] as TypeIsNotAssignableMessage
+            assertEquals(IntegerType, message.lhsType)
+            assertEquals(RealType, message.rhsType)
+        }
+    }
+
+    @Test
+    fun missingReturnExpression() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "IncompatibleReturnType.pas",
+                """
+                function foo: integer;
+                begin
+                    return;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        messageCollector.list().let {
+            assertEquals(1, it.size)
+            assertTrue(it[0] is ExpectedReturnValueMessage)
+            val message = it[0] as ExpectedReturnValueMessage
+            assertEquals(IntegerType, message.expected)
+        }
+    }
+
+    @Test
+    fun procedureCannotReturnValue() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "ProcedureCannotReturnValue.pas",
+                """
+                procedure foo;
+                begin
+                    return 2;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        messageCollector.list().let {
+            it.forEach { println(it) }
+            assertEquals(1, it.size)
+            assertTrue(it[0] is ProcedureCannotReturnValueMessage)
+        }
+    }
+
 }

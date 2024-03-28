@@ -136,11 +136,13 @@ class Context(private val messageCollector: MessageCollector) {
     private fun resolve(returnStatement: ReturnStatement, scope: Scope) {
         returnStatement.expression?.let {
             resolve(it, scope)
-            if (it.type != null && it.type != scope.returnType) {
-                messageCollector.add(ExpectedTypeMessage(scope.returnType, it.type!!, returnStatement.position))
+            if (scope.returnType == UnitType) {
+                messageCollector.add(ProcedureCannotReturnValueMessage(returnStatement.position))
+            } else if (!scope.returnType.isAssignableFrom(it.type!!)) {
+                messageCollector.add(TypeIsNotAssignableMessage(scope.returnType, it.type!!, returnStatement.position))
             }
         } ?: if (scope.returnType != UnitType) {
-            messageCollector.add(ExpectedTypeMessage(UnitType, scope.returnType, returnStatement.position))
+            messageCollector.add(ExpectedReturnValueMessage(scope.returnType, returnStatement.position))
         } else {
         }
     }
