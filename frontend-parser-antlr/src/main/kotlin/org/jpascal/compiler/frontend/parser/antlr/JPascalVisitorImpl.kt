@@ -10,21 +10,17 @@ import org.jpascal.compiler.frontend.parser.antlr.generated.JPascalParser
 class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?>() {
     private var program: Program? = null
 
-    data class ProgramBlock(
-        val functions: List<FunctionDeclaration>
-    )
-
     fun getProgram() = program
 
     override fun visitProgram(ctx: JPascalParser.ProgramContext): Any? {
-        val programBlock = visitProgramBlock(ctx.programBlock())
+        val declarations = visitProgramBlock(ctx.programBlock())
         val compoundStatement = ctx.programBlock().compoundStatement()?.let {
             visitCompoundStatement(it)
         }
         program = Program(
             packageName = ctx.packagePart()?.fullyQualifiedName()?.text,
             uses = ctx.usesPart().map(::visitUsesPart),
-            declarations = Declarations(functions = programBlock.functions, variables = listOf()),
+            declarations = declarations,
             compoundStatement = compoundStatement ?: CompoundStatement(listOf()),
             position = mkPosition(ctx.position)
         )
@@ -36,12 +32,43 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             Uses(it.fullyQualifiedName().text, it.identifier().text)
         } ?: Uses(ctx.usesSymbols()!!.text, null)
 
-    override fun visitProgramBlock(ctx: JPascalParser.ProgramBlockContext): ProgramBlock {
+    override fun visitProgramBlock(ctx: JPascalParser.ProgramBlockContext): Declarations {
         val functions = mutableListOf<FunctionDeclaration>()
+        val variables = mutableListOf<VariableDeclaration>()
         ctx.procedureAndFunctionDeclarationPart().forEach {
             functions.add(visitProcedureAndFunctionDeclarationPart(it))
         }
-        return ProgramBlock(functions = functions)
+        ctx.variableDeclarationPart().forEach {
+            variables.addAll(visitVariableDeclarationPart(it))
+        }
+        return Declarations(functions = functions, variables = variables)
+    }
+
+    override fun visitVariableDeclarationPart(ctx: JPascalParser.VariableDeclarationPartContext): List<VariableDeclaration> {
+        val variables = mutableListOf<VariableDeclaration>()
+        ctx.variableDeclaration().forEach {
+            variables.addAll(visitVariableDeclaration(it))
+        }
+        return variables
+    }
+    override fun visitVariableDeclaration(ctx: JPascalParser.VariableDeclarationContext): List<VariableDeclaration> {
+        return ctx.identifierList().identifier().map {
+            VariableDeclaration(it.text, visitType_(ctx.type_()), null)
+        }
+    }
+
+    override fun visitType_(ctx: JPascalParser.Type_Context): Type {
+        ctx.simpleType()?.let {
+            return visitSimpleType(it)
+        }
+        TODO()
+    }
+
+    override fun visitSimpleType(ctx: JPascalParser.SimpleTypeContext): Type {
+        ctx.typeIdentifier()?.let {
+            return it.asType()
+        }
+        TODO()
     }
 
     override fun visitProcedureAndFunctionDeclarationPart(ctx: JPascalParser.ProcedureAndFunctionDeclarationPartContext): FunctionDeclaration {

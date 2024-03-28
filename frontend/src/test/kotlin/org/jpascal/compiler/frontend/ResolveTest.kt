@@ -2,10 +2,13 @@ package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.FunctionStatement
+import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.types.StringType
 import org.jpascal.compiler.frontend.parser.api.Source
 import org.jpascal.compiler.frontend.resolve.messages.CannotResolveFunctionMessage
 import org.jpascal.compiler.frontend.resolve.Context
 import org.jpascal.compiler.frontend.resolve.JvmMethod
+import org.jpascal.compiler.frontend.resolve.messages.TypeIsNotAssignableMessage
 import org.jpascal.compiler.frontend.resolve.messages.VariableIsNotDefinedMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -119,6 +122,33 @@ class ResolveTest : BaseFrontendTest() {
             assertEquals(1, messages.size)
             assertTrue(messages[0] is VariableIsNotDefinedMessage)
             assertEquals("x", (messages[0] as VariableIsNotDefinedMessage).name)
+        }
+    }
+
+    @Test
+    fun typeIsNotAssignableFrom() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "typeIsNotAssignableFrom.pas",
+                """
+                var x : integer;     
+                begin
+                    x := 'Hello';
+                end.
+                """.trimIndent()
+            )
+        )
+        println(program)
+        context.resolve(program)
+        messageCollector.list().let { messages ->
+            assertEquals(1, messages.size)
+            assertTrue(messages[0] is TypeIsNotAssignableMessage)
+            val message = (messages[0] as TypeIsNotAssignableMessage)
+            assertEquals(IntegerType, message.lhsType)
+            assertEquals(StringType, message.rhsType)
         }
     }
 }
