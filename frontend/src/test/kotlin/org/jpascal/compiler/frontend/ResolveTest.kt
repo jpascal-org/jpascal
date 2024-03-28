@@ -6,6 +6,7 @@ import org.jpascal.compiler.frontend.parser.api.Source
 import org.jpascal.compiler.frontend.resolve.messages.CannotResolveFunctionMessage
 import org.jpascal.compiler.frontend.resolve.Context
 import org.jpascal.compiler.frontend.resolve.JvmMethod
+import org.jpascal.compiler.frontend.resolve.messages.VariableIsNotDefinedMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -96,5 +97,28 @@ class ResolveTest : BaseFrontendTest() {
             println(it)
         }
         assertEquals(0, messageCollector.list().size)
+    }
+
+    @Test
+    fun undefinedVariable() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "UndefinedVariable.pas",
+                """
+                begin
+                    x := 'Hello';
+                end.
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        messageCollector.list().let { messages ->
+            assertEquals(1, messages.size)
+            assertTrue(messages[0] is VariableIsNotDefinedMessage)
+            assertEquals("x", (messages[0] as VariableIsNotDefinedMessage).name)
+        }
     }
 }
