@@ -3,6 +3,7 @@ package org.jpascal.compiler.frontend.resolve
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.common.ir.getJvmClassName
 import org.jpascal.compiler.common.ir.getJvmDescriptor
+import org.jpascal.compiler.common.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
 import org.jpascal.compiler.frontend.resolve.messages.*
@@ -12,6 +13,15 @@ class Context(private val messageCollector: MessageCollector) {
     private val externalFunctions = mutableMapOf<String, MutableList<JvmMethod>>()
 
     private fun JvmMethod.getTypeSignature(): String = descriptor.substring(1, descriptor.indexOf(')'))
+    private fun FunctionCall.getTypeSignature(): String =
+        arguments
+            .map { it.type?.toJvmType() }
+            .joinToString(separator = "")
+
+    private fun JvmMethod.matchSignature(call: FunctionCall): Boolean {
+        return getTypeSignature() == call.getTypeSignature()
+    }
+
     private fun JvmMethod.getReturnType(): Type =
         when (val returnType = descriptor.substring(descriptor.indexOf(')') + 1)) {
             "I" -> IntegerType
@@ -53,15 +63,20 @@ class Context(private val messageCollector: MessageCollector) {
     }
 
     private fun resolve(functionCall: FunctionCall, scope: Scope) {
-        scope.findFunctionCandidates(functionCall.identifier)?.let {
-            if (it.size == 1) {
-                functionCall.resolved = it[0]
-                functionCall.type = it[0].getReturnType()
+        functionCall.arguments.forEach { resolve(it, scope) }
+        scope.findFunctionCandidates(functionCall.identifier)?.let { candidates ->
+            if (candidates.size == 1) {
+                functionCall.resolved = candidates[0]
+                functionCall.type = candidates[0].getReturnType()
             } else {
-                TODO()
+                candidates.find { method -> method.matchSignature(functionCall) }?.let { method ->
+                    functionCall.resolved = method
+                    functionCall.type = method.getReturnType()
+                } ?: messageCollector.add(
+                    CannotMatchOverloadedCandidateMessage(functionCall, candidates, functionCall.position)
+                )
             }
         } ?: messageCollector.add(CannotResolveFunctionMessage(functionCall.identifier, functionCall.position))
-        functionCall.arguments.forEach { resolve(it, scope) }
     }
 
     private fun resolve(variable: Variable, scope: Scope) {
@@ -81,6 +96,7 @@ class Context(private val messageCollector: MessageCollector) {
                 resolve(expression.right, scope)
                 expression.type = getExpressionType(expression)
             }
+
             is Variable -> resolve(expression, scope)
         }
 //        if (expression.type == null) TODO("expr=$expression")

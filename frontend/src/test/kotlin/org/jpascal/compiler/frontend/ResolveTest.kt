@@ -1,6 +1,8 @@
 package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.common.MessageCollector
+import org.jpascal.compiler.frontend.ir.Assignment
+import org.jpascal.compiler.frontend.ir.FunctionCall
 import org.jpascal.compiler.frontend.ir.FunctionStatement
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
@@ -229,4 +231,69 @@ class ResolveTest : BaseFrontendTest() {
         }
     }
 
+    @Test
+    fun overloadedFunctions() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "OverloadedFunctions.pas",
+                """
+                function foo(x: integer; y: real): integer;
+                begin
+                    return 1;
+                end;
+                function foo(x: real; y: integer): integer;
+                begin
+                    return 2;
+                end;
+                var x: integer;
+                begin
+                    x := foo(0.1, 2);
+                end.
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        assertEquals(0, messageCollector.list().size)
+        val call = ((program.compoundStatement.statements[0] as Assignment).expression as FunctionCall).resolved
+        val func = program.declarations.functions[1].jvmMethod
+        assertEquals(func, call)
+    }
+
+    @Test
+    fun cannotMatchOverloadedCandidate() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "CannotMatchOverloadedCandidates.pas",
+                """
+                function foo(x: integer; y: real): integer;
+                begin
+                    return 1;
+                end;
+                function foo(x: real; y: integer): integer;
+                begin
+                    return 2;
+                end;
+                var x: integer;
+                begin
+                    x := foo(0.1, 2.0);
+                end.
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        messageCollector.list().let {
+            assertEquals(1, it.size)
+            assertTrue(it[0] is CannotMatchOverloadedCandidateMessage)
+            val message = it[0] as CannotMatchOverloadedCandidateMessage
+            assertEquals(2, message.candidates.size)
+        }
+    }
 }
