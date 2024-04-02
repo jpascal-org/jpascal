@@ -5,8 +5,9 @@ import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.BooleanType
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
+import org.jpascal.compiler.frontend.ir.types.Type
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.Type
+import org.objectweb.asm.Type as AsmType
 import org.objectweb.asm.commons.LocalVariablesSorter
 
 class FunctionGenerator(
@@ -22,7 +23,7 @@ class FunctionGenerator(
         addFormalParametersToLocalVars()
         function.declarations.variables.forEach {
             val jvmType = it.type.toJvmType()
-            val id = mv.newLocal(Type.getType(jvmType))
+            val id = mv.newLocal(AsmType.getType(jvmType))
             localVars[it.name] = id
         }
         function.compoundStatement.statements.forEach(::generateStatement)
@@ -78,9 +79,23 @@ class FunctionGenerator(
         )
     }
 
+    private fun implicitConversion(source: Type, target: Type) {
+        if (source == IntegerType && target == RealType) {
+            mv.visitInsn(Opcodes.I2D)
+        } else {
+            TODO()
+        }
+    }
+
     private fun generateArithmetics(expression: TreeExpression, iop: Int, dop: Int) {
         generateExpression(expression.left)
+        if (expression.left.type != expression.type) {
+            implicitConversion(expression.left.type!!, expression.type!!)
+        }
         generateExpression(expression.right)
+        if (expression.right.type != expression.type) {
+            implicitConversion(expression.right.type!!, expression.type!!)
+        }
         when (expression.type) {
             IntegerType -> mv.visitInsn(iop)
             RealType -> mv.visitInsn(dop)

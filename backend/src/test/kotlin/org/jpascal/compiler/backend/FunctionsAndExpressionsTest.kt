@@ -219,6 +219,31 @@ class FunctionsAndExpressionsTest {
         assertEquals(z + z, r)
     }
 
+    @Test
+    fun integerToRealImplicitCast() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "LocalRealVariables.pas",
+                """
+                function foo(x, y: real): real;
+                begin
+                    return x + 2 * y;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod("foo", Double::class.java, Double::class.java).invoke(null, 3.0, 6.0)
+        assertEquals(3.0 + 2 * 6.0, r)
+    }
+
     private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
 
     private fun createFunction(expression: Expression, position: SourcePosition): FunctionDeclaration {
