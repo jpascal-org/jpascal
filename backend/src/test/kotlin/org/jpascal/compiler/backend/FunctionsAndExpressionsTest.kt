@@ -226,7 +226,7 @@ class FunctionsAndExpressionsTest {
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
-                "LocalRealVariables.pas",
+                "IntegerToRealImplicitCast.pas",
                 """
                 function foo(x, y: real): real;
                 begin
