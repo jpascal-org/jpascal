@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation(project(":frontend-api"))
     implementation(project(":frontend"))
+    implementation(project(":frontend-parser-antlr"))
     implementation(project(":common"))
     implementation(project(":stdlib"))
 

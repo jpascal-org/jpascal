@@ -1,14 +1,19 @@
 package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
+import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
+import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
+import org.jpascal.compiler.frontend.parser.api.ParserFacade
+import org.jpascal.compiler.frontend.parser.api.Source
+import org.jpascal.compiler.frontend.resolve.Context
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class Functions {
+class FunctionsAndExpressionsTest {
 
     private fun dummyPosition(filename: String) =
         SourcePosition(filename, Position(0, 0), Position(0, 0))
@@ -153,6 +158,68 @@ class Functions {
         val r = clazz.getMethod(function.identifier, Double::class.java, Double::class.java).invoke(null, 10.0, 6.0)
         assertEquals((10.0 + 6.0) * (10.0 - 5.0), r)
     }
+
+    @Test
+    fun localIntegerVariables() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "LocalIntegerVariables.pas",
+                """
+                function foo(x, y: integer): integer;
+                var
+                    z, result: integer;
+                begin
+                    z := x + 2 * y;
+                    result := z + z;
+                    return result;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod("foo", Int::class.java, Int::class.java).invoke(null, 3, 6)
+        val z = 3 + 2 * 6
+        assertEquals(z + z, r)
+    }
+
+    @Test
+    fun localRealVariables() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "LocalRealVariables.pas",
+                """
+                function foo(x, y: real): real;
+                var
+                    z, result: real;
+                begin
+                    z := x + 2.0 * y;
+                    result := z + z;
+                    return result;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod("foo", Double::class.java, Double::class.java).invoke(null, 3.0, 6.0)
+        val z = 3.0 + 2 * 6.0
+        assertEquals(z + z, r)
+    }
+
+    private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
 
     private fun createFunction(expression: Expression, position: SourcePosition): FunctionDeclaration {
         fun collectVariables(expression: Expression, acc: MutableList<Variable>) {

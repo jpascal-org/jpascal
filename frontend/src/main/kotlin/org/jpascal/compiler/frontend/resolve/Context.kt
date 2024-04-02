@@ -109,10 +109,10 @@ class Context(private val messageCollector: MessageCollector) {
             else -> false
         }
 
-    private fun getExpressionType(expression: TreeExpression): Type {
+    private fun getExpressionType(expression: TreeExpression): Type? {
         val (op, left, right) = expression
-        val leftType = left.type!!
-        val rightType = right.type!!
+        val leftType = left.type ?: return null
+        val rightType = right.type ?: return null
         return when (op) {
             ArithmeticOperation.PLUS,
             ArithmeticOperation.MINUS,
@@ -130,7 +130,6 @@ class Context(private val messageCollector: MessageCollector) {
             else -> TODO()
         }
     }
-
 
     private fun resolve(compoundStatement: CompoundStatement, scope: Scope) {
         compoundStatement.statements.forEach {
@@ -154,7 +153,7 @@ class Context(private val messageCollector: MessageCollector) {
             resolve(it, scope)
             if (scope.returnType == UnitType) {
                 messageCollector.add(ProcedureCannotReturnValueMessage(returnStatement.position))
-            } else if (!scope.returnType.isAssignableFrom(it.type!!)) {
+            } else if (it.type != null && !scope.returnType.isAssignableFrom(it.type!!)) {
                 messageCollector.add(TypeIsNotAssignableMessage(scope.returnType, it.type!!, returnStatement.position))
             }
         } ?: if (scope.returnType != UnitType) {

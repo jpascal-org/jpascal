@@ -78,16 +78,30 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         } ?: visitProcedureDeclaration(decl.procedureDeclaration()!!)
     }
 
-    override fun visitProcedureDeclaration(ctx: JPascalParser.ProcedureDeclarationContext): FunctionDeclaration =
-        FunctionDeclaration(
+    override fun visitProcedureDeclaration(ctx: JPascalParser.ProcedureDeclarationContext): FunctionDeclaration {
+        val declarations = visitProcedureAndFunctionBlock(ctx.procedureAndFunctionBlock())
+        return FunctionDeclaration(
             identifier = ctx.identifier().text,
             params = ctx.formalParameterList()?.asParameterList() ?: listOf(),
             returnType = UnitType,
             access = visitNullableAccess(ctx.access()),
-            declarations = Declarations(),
+            declarations = declarations,
             compoundStatement = visitCompoundStatement(ctx.procedureAndFunctionBlock().compoundStatement()),
             position = mkPosition(ctx.position)
         )
+    }
+
+    override fun visitProcedureAndFunctionBlock(ctx: JPascalParser.ProcedureAndFunctionBlockContext): Declarations {
+        val functions = mutableListOf<FunctionDeclaration>()
+        val variables = mutableListOf<VariableDeclaration>()
+        ctx.procedureAndFunctionDeclarationPart().forEach {
+            functions.add(visitProcedureAndFunctionDeclarationPart(it))
+        }
+        ctx.variableDeclarationPart().forEach {
+            variables.addAll(visitVariableDeclarationPart(it))
+        }
+        return Declarations(functions = functions, variables = variables)
+    }
 
     private fun JPascalParser.TypeIdentifierContext.asType(): Type {
         if (CHAR() != null) return CharType
@@ -120,16 +134,18 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             if (ctx.PROTECTED() != null) Access.PROTECTED else Access.PRIVATE
         } else Access.PUBLIC
 
-    override fun visitFunctionDeclaration(ctx: JPascalParser.FunctionDeclarationContext) =
-        FunctionDeclaration(
+    override fun visitFunctionDeclaration(ctx: JPascalParser.FunctionDeclarationContext): FunctionDeclaration {
+        val declarations = visitProcedureAndFunctionBlock(ctx.procedureAndFunctionBlock())
+        return FunctionDeclaration(
             identifier = ctx.identifier().text,
             params = ctx.formalParameterList()?.asParameterList() ?: listOf(),
             returnType = ctx.resultType().typeIdentifier().asType(),
             access = visitNullableAccess(ctx.access()),
-            declarations = Declarations(),
+            declarations = declarations,
             compoundStatement = visitCompoundStatement(ctx.procedureAndFunctionBlock().compoundStatement()),
             position = mkPosition(ctx.position)
         )
+    }
 
     private fun mkPosition(position: Position?): SourcePosition? =
         position?.let { SourcePosition(filename, position.start.toPosition(), position.end.toPosition()) }
@@ -184,6 +200,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     }
 
     override fun visitMultiplicativeoperator(ctx: JPascalParser.MultiplicativeoperatorContext): Operation {
+        if (ctx.STAR() != null) return ArithmeticOperation.TIMES
         TODO()
     }
 

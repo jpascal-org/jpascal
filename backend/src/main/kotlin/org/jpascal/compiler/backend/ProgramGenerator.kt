@@ -7,6 +7,7 @@ import org.jpascal.compiler.frontend.ir.Program
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
+import org.objectweb.asm.commons.LocalVariablesSorter
 
 class ProgramGenerator {
     fun generate(program: Program): CompilationResult {
@@ -21,14 +22,15 @@ class ProgramGenerator {
             null
         )
         program.declarations.functions.forEach {
+            val access = getAccessMask(it.access) or Opcodes.ACC_STATIC
             val mv = cw.visitMethod(
-                getAccessMask(it.access) or Opcodes.ACC_STATIC,
+                access,
                 it.identifier,
                 it.getJvmDescriptor(),
                 null,
                 null
             )
-            FunctionGenerator(mv, it).generate()
+            FunctionGenerator(LocalVariablesSorter(access, it.getJvmDescriptor(), mv), it).generate()
         }
         // FIXME: generate main
         return CompilationResult(className, cw.toByteArray())

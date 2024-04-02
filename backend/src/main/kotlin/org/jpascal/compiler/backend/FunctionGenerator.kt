@@ -1,30 +1,57 @@
 package org.jpascal.compiler.backend
 
+import org.jpascal.compiler.common.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.types.BooleanType
-import org.objectweb.asm.MethodVisitor
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
+import org.objectweb.asm.commons.LocalVariablesSorter
 
 class FunctionGenerator(
-    private val mv: MethodVisitor,
+    private val mv: LocalVariablesSorter,
     private val function: FunctionDeclaration
 ) {
 
     private var maxStack = 0
-    private var maxLocals = function.params.size
+    private var maxLocals = function.params.size + function.declarations.variables.size
+    private val localVars = mutableMapOf<String, Int>()
 
     fun generate() {
+        addFormalParametersToLocalVars()
+        function.declarations.variables.forEach {
+            val jvmType = it.type.toJvmType()
+            val id = mv.newLocal(Type.getType(jvmType))
+            localVars[it.name] = id
+        }
         function.compoundStatement.statements.forEach(::generateStatement)
         mv.visitMaxs(maxStack, maxLocals)
+    }
+
+    private fun addFormalParametersToLocalVars() {
+        val list = function.params
+        var i = 0
+        var jvmIndex = 0
+        while (i < list.size) {
+            localVars[list[i].name] = jvmIndex
+            when (list[i++].type) {
+                IntegerType, BooleanType -> jvmIndex++
+                RealType -> jvmIndex += 2
+            }
+        }
     }
 
     private fun generateStatement(statement: Statement) {
         when (statement) {
             is Assignment -> {
-                TODO()
+                generateExpression(statement.expression)
+                val id = localVars[statement.variable.name]!!
+                when (statement.variable.type) {
+                    IntegerType -> mv.visitVarInsn(Opcodes.ISTORE, id)
+                    RealType -> mv.visitVarInsn(Opcodes.DSTORE, id)
+                    else -> TODO()
+                }
             }
 
             is FunctionStatement -> generateFunctionCall(statement.functionCall)
@@ -49,19 +76,6 @@ class FunctionGenerator(
             jvmSymbol.descriptor,
             false
         )
-    }
-
-    private fun List<FormalParameter>.findIndexByName(name: String): Int? {
-        var i = 0
-        var jvmIndex = 0
-        while (i < size) {
-            if (this[i].name == name) return jvmIndex
-            when (this[i++].type) {
-                IntegerType, BooleanType -> jvmIndex++
-                RealType -> jvmIndex += 2
-            }
-        }
-        return null
     }
 
     private fun generateArithmetics(expression: TreeExpression, iop: Int, dop: Int) {
@@ -93,7 +107,7 @@ class FunctionGenerator(
             }
 
             is Variable -> {
-                val index = function.params.findIndexByName(expression.name)
+                val index = localVars[expression.name]
                 if (index != null) {
                     when (expression.type) {
                         is IntegerType -> mv.visitVarInsn(Opcodes.ILOAD, index)
