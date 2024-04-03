@@ -1,9 +1,7 @@
 package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.common.MessageCollector
-import org.jpascal.compiler.frontend.ir.Assignment
-import org.jpascal.compiler.frontend.ir.FunctionCall
-import org.jpascal.compiler.frontend.ir.FunctionStatement
+import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
 import org.jpascal.compiler.frontend.ir.types.StringType
@@ -14,6 +12,7 @@ import org.jpascal.compiler.frontend.resolve.messages.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class ResolveTest : BaseFrontendTest() {
     @Test
@@ -295,5 +294,56 @@ class ResolveTest : BaseFrontendTest() {
             val message = it[0] as CannotMatchOverloadedCandidateMessage
             assertEquals(2, message.candidates.size)
         }
+    }
+
+    @Test
+    fun duplicateVariableDeclarationInFunction() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "DuplicateVariableDeclarationInFunction.pas",
+                """
+                function foo(x: integer; y: real; y: integer): real;
+                var 
+                    x: real;
+                    z, z: integer;
+                begin
+                    return x + z;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.add(program)
+        context.resolve(program)
+        messageCollector.list().let {
+            assertEquals(3, it.size)
+            (it[0] as? ElementIsAlreadyDefinedMessage)?.let { msg ->
+                (msg.defined as? FormalParameter)?.let { param ->
+                    assertEquals("y", param.name)
+                } ?: fail()
+                (msg.element as? FormalParameter)?.let { decl ->
+                    assertEquals("y", decl.name)
+                } ?: fail()
+            } ?: fail()
+            (it[1] as? ElementIsAlreadyDefinedMessage)?.let { msg ->
+                (msg.defined as? FormalParameter)?.let { param ->
+                    assertEquals("x", param.name)
+                } ?: fail()
+                (msg.element as? VariableDeclaration)?.let { decl ->
+                    assertEquals("x", decl.name)
+                } ?: fail()
+            } ?: fail()
+            (it[2] as? ElementIsAlreadyDefinedMessage)?.let { msg ->
+                (msg.defined as? VariableDeclaration)?.let { decl ->
+                    assertEquals("z", decl.name)
+                } ?: fail()
+                (msg.element as? VariableDeclaration)?.let { decl ->
+                    assertEquals("z", decl.name)
+                } ?: fail()
+            } ?: fail()
+        }
+
     }
 }

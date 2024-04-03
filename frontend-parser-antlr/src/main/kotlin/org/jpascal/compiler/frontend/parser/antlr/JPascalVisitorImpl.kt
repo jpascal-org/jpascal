@@ -53,7 +53,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     }
     override fun visitVariableDeclaration(ctx: JPascalParser.VariableDeclarationContext): List<VariableDeclaration> {
         return ctx.identifierList().identifier().map {
-            VariableDeclaration(it.text, visitType_(ctx.type_()), null)
+            VariableDeclaration(it.text, visitType_(ctx.type_()), null, mkPosition(ctx.position))
         }
     }
 
@@ -119,9 +119,10 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             group.identifierList().identifier().forEach { identifier ->
                 result.add(
                     FormalParameter(
-                        name = identifier.text,
-                        type = group.typeIdentifier().asType(),
-                        pass = if (it.VAR() != null) Pass.VAR else Pass.VALUE
+                        identifier.text,
+                        group.typeIdentifier().asType(),
+                        if (it.VAR() != null) Pass.VAR else Pass.VALUE,
+                        mkPosition(identifier.position)
                     )
                 )
             }

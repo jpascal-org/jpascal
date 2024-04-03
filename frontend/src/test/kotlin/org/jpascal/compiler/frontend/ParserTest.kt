@@ -47,8 +47,10 @@ class ParserTest : BaseFrontendTest() {
         val func = FunctionDeclaration(
             identifier = "foo",
             params = listOf(
-                FormalParameter(name = "x", type = IntegerType, pass = Pass.VALUE),
-                FormalParameter(name = "y", type = IntegerType, pass = Pass.VALUE)
+                FormalParameter(name = "x", type = IntegerType, pass = Pass.VALUE,
+                    position = mkPosition(Position(1, 14), Position(1, 15))),
+                FormalParameter(name = "y", type = IntegerType, pass = Pass.VALUE,
+                    position = mkPosition(Position(1, 17), Position(1, 18)))
             ),
             returnType = IntegerType,
             access = Access.PUBLIC,

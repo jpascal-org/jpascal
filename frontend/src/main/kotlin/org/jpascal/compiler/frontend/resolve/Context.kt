@@ -186,7 +186,13 @@ class Context(private val messageCollector: MessageCollector) {
     }
 
     fun resolve(program: Program) {
-        val scope = Scope(program.declarations.copy(functions = listOf()), externalFunctions, UnitType)
+        val scope = Scope(
+            messageCollector,
+            listOf(),
+            program.declarations.copy(functions = listOf()),
+            externalFunctions,
+            UnitType
+        )
         program.declarations.functions.forEach {
             resolve(it, scope)
         }

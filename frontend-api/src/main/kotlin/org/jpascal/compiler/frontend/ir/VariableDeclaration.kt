@@ -4,6 +4,7 @@ import org.jpascal.compiler.frontend.ir.types.Type
 
 data class VariableDeclaration(
     val name: String,
-    val type: Type,
-    val expr: Expression?
-)
+    override val type: Type,
+    val expr: Expression?,
+    override val position: SourcePosition?
+) : TypedDeclaration

@@ -265,7 +265,7 @@ class FunctionsAndExpressionsTest {
         collectVariables(expression, vars)
         return FunctionDeclaration(
             identifier = "foo",
-            params = vars.toSet().sortedBy { it.name }.map { FormalParameter(it.name, it.type!!, Pass.VALUE) },
+            params = vars.toSet().sortedBy { it.name }.map { FormalParameter(it.name, it.type!!, Pass.VALUE, null) },
             returnType = expression.type!!,
             access = Access.PUBLIC,
             declarations = Declarations(),
