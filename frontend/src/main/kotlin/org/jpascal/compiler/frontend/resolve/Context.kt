@@ -73,16 +73,16 @@ class Context(private val messageCollector: MessageCollector) {
                     functionCall.resolved = method
                     functionCall.type = method.getReturnType()
                 } ?: messageCollector.add(
-                    CannotMatchOverloadedCandidateMessage(functionCall, candidates, functionCall.position)
+                    CannotMatchOverloadedCandidateMessage(functionCall, candidates)
                 )
             }
-        } ?: messageCollector.add(CannotResolveFunctionMessage(functionCall.identifier, functionCall.position))
+        } ?: messageCollector.add(CannotResolveFunctionMessage(functionCall))
     }
 
     private fun resolve(variable: Variable, scope: Scope) {
         val decl = scope.findVariable(variable.name)
         if (decl == null) {
-            messageCollector.add(VariableIsNotDefinedMessage(variable.name, variable.position))
+            messageCollector.add(VariableIsNotDefinedMessage(variable))
         } else {
             variable.type = decl.type
         }

@@ -8,8 +8,8 @@ import org.jpascal.compiler.frontend.resolve.JvmMethod
 
 class CannotMatchOverloadedCandidateMessage(
     val call: FunctionCall,
-    val candidates: List<JvmMethod>,
-    override val position: SourcePosition?
+    val candidates: List<JvmMethod>
 ) : Message {
     override val level: MessageLevel = MessageLevel.ERROR
+    override val position: SourcePosition? = call.position
 }

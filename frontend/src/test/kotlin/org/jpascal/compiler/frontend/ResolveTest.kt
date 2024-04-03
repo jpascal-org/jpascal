@@ -61,7 +61,7 @@ class ResolveTest : BaseFrontendTest() {
         messageCollector.list().let { messages ->
             assertEquals(1, messages.size)
             assertTrue(messages[0] is CannotResolveFunctionMessage)
-            assertEquals("writeln", (messages[0] as CannotResolveFunctionMessage).functionName)
+            assertEquals("writeln", (messages[0] as CannotResolveFunctionMessage).call.identifier)
         }
     }
 
@@ -121,7 +121,7 @@ class ResolveTest : BaseFrontendTest() {
         messageCollector.list().let { messages ->
             assertEquals(1, messages.size)
             assertTrue(messages[0] is VariableIsNotDefinedMessage)
-            assertEquals("x", (messages[0] as VariableIsNotDefinedMessage).name)
+            assertEquals("x", (messages[0] as VariableIsNotDefinedMessage).variable.name)
         }
     }
 
