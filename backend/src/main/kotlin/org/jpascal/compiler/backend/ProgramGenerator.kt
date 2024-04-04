@@ -2,6 +2,7 @@ package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.common.ir.getJvmClassName
 import org.jpascal.compiler.common.ir.getJvmDescriptor
+import org.jpascal.compiler.common.ir.globalVariableJvmField
 import org.jpascal.compiler.frontend.ir.Access
 import org.jpascal.compiler.frontend.ir.Program
 import org.objectweb.asm.ClassWriter
@@ -21,6 +22,25 @@ class ProgramGenerator {
             Type.getInternalName(Object::class.java),
             null
         )
+        generateVariables(program, cw)
+        generateFunctions(program, cw)
+        return CompilationResult(className, cw.toByteArray())
+    }
+
+    private fun generateVariables(program: Program, cw: ClassWriter) {
+        program.declarations.variables.forEach {
+            val field = it.globalVariableJvmField()
+            cw.visitField(
+                Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC,
+                field.name,
+                field.descriptor,
+                null,
+                null
+            )
+        }
+    }
+
+    private fun generateFunctions(program: Program, cw: ClassWriter) {
         program.declarations.functions.forEach {
             val access = getAccessMask(it.access) or Opcodes.ACC_STATIC
             val mv = cw.visitMethod(
@@ -32,8 +52,6 @@ class ProgramGenerator {
             )
             FunctionGenerator(LocalVariablesSorter(access, it.getJvmDescriptor(), mv), it).generate()
         }
-        // FIXME: generate main
-        return CompilationResult(className, cw.toByteArray())
     }
 
     private fun getAccessMask(access: Access): Int =

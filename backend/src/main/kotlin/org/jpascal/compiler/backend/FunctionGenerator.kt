@@ -47,11 +47,14 @@ class FunctionGenerator(
         when (statement) {
             is Assignment -> {
                 generateExpression(statement.expression)
-                val id = localVars[statement.variable.name]!!
-                when (statement.variable.type) {
-                    IntegerType -> mv.visitVarInsn(Opcodes.ISTORE, id)
-                    RealType -> mv.visitVarInsn(Opcodes.DSTORE, id)
-                    else -> TODO()
+                localVars[statement.variable.name]?.let { id ->
+                    when (statement.variable.type) {
+                        IntegerType -> mv.visitVarInsn(Opcodes.ISTORE, id)
+                        RealType -> mv.visitVarInsn(Opcodes.DSTORE, id)
+                        else -> TODO()
+                    }
+                } ?: statement.variable.jvmField!!.let {
+                    mv.visitFieldInsn(Opcodes.PUTSTATIC, it.owner, it.name, it.descriptor)
                 }
             }
 
@@ -130,7 +133,8 @@ class FunctionGenerator(
                         else -> TODO()
                     }
                 } else {
-                    TODO()
+                    val field = expression.jvmField!!
+                    mv.visitFieldInsn(Opcodes.GETSTATIC, field.owner, field.name, field.descriptor)
                 }
             }
 

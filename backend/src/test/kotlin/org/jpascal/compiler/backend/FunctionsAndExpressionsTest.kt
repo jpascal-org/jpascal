@@ -244,6 +244,33 @@ class FunctionsAndExpressionsTest {
         assertEquals(3.0 + 2 * 6.0, r)
     }
 
+    @Test
+    fun useGlobalVariableInFunction() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "UseGlobalVariableInFunction.pas",
+                """
+                var x: integer;
+                function foo(y: integer): integer;
+                begin
+                    x := y;
+                    return x * x;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator()
+        val result = generator.generate(program)
+        writeResult(result)
+        val clazz = result.getClass()
+        val r = clazz.getMethod("foo", Int::class.java).invoke(null, 2)
+        assertEquals(4, r)
+    }
+
     private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
 
     private fun createFunction(expression: Expression, position: SourcePosition): FunctionDeclaration {

@@ -3,6 +3,7 @@ package org.jpascal.compiler.frontend.resolve
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.common.ir.getJvmClassName
 import org.jpascal.compiler.common.ir.getJvmDescriptor
+import org.jpascal.compiler.common.ir.globalVariableJvmField
 import org.jpascal.compiler.common.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
@@ -80,11 +81,13 @@ class Context(private val messageCollector: MessageCollector) {
     }
 
     private fun resolve(variable: Variable, scope: Scope) {
-        val decl = scope.findVariable(variable.name)
+        val declarationScope = scope.findVariableDeclarationScope(variable.name)
+        val decl = declarationScope?.findVariable(variable.name)
         if (decl == null) {
             messageCollector.add(VariableIsNotDefinedMessage(variable))
         } else {
             variable.type = decl.type
+            if (declarationScope.parent == null) variable.jvmField = (decl as VariableDeclaration).globalVariableJvmField()
         }
     }
 

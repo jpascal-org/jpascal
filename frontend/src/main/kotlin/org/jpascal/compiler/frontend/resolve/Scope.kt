@@ -11,7 +11,7 @@ class Scope(
     declarations: Declarations,
     externalFunctions: Map<String, MutableList<JvmMethod>>,
     val returnType: Type,
-    private val parent: Scope? = null
+    val parent: Scope? = null
 ) {
     private val variables = mutableMapOf<String, TypedDeclaration>()
     private val functions = mutableMapOf<String, MutableList<JvmMethod>>()
@@ -49,8 +49,14 @@ class Scope(
         )
     }
 
-    fun findVariable(name: String): TypedDeclaration? =
-        variables[name] ?: parent?.findVariable(name)
+    fun findVariableDeclarationScope(name: String): Scope?  =
+        if (variables.containsKey(name)) {
+            this
+        } else {
+            parent?.findVariableDeclarationScope(name)
+        }
+
+    fun findVariable(name: String): TypedDeclaration? = variables[name]
 
     fun findFunctionCandidates(name: String): List<JvmMethod>? = functions[name] ?: parent?.findFunctionCandidates(name)
 }
