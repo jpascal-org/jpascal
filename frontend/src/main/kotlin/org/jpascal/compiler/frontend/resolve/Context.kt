@@ -87,7 +87,8 @@ class Context(private val messageCollector: MessageCollector) {
             messageCollector.add(VariableIsNotDefinedMessage(variable))
         } else {
             variable.type = decl.type
-            if (declarationScope.parent == null) variable.jvmField = (decl as VariableDeclaration).globalVariableJvmField()
+            if (declarationScope.parent == null) variable.jvmField =
+                (decl as VariableDeclaration).globalVariableJvmField()
         }
     }
 
@@ -98,6 +99,11 @@ class Context(private val messageCollector: MessageCollector) {
                 resolve(expression.left, scope)
                 resolve(expression.right, scope)
                 expression.type = getExpressionType(expression)
+            }
+
+            is UnaryExpression -> {
+                resolve(expression.expression, scope)
+                expression.type = expression.expression.type
             }
 
             is Variable -> resolve(expression, scope)
@@ -120,29 +126,59 @@ class Context(private val messageCollector: MessageCollector) {
             ArithmeticOperation.PLUS,
             ArithmeticOperation.MINUS,
             ArithmeticOperation.TIMES -> {
-                if (!leftType.isNumeric()) {
-                    messageCollector.add(ExpectedNumericOperandMessage(leftType, left.position))
-                }
-                if (!rightType.isNumeric()) {
-                    messageCollector.add(ExpectedNumericOperandMessage(rightType, right.position))
-                }
+                assertNumericType(leftType, left.position)
+                assertNumericType(rightType, right.position)
                 // TODO: more types => more checks
                 if (leftType == RealType || rightType == RealType) RealType else leftType
             }
 
+            is RelationalOperation -> {
+                assertNumericType(leftType, left.position)
+                assertNumericType(rightType, right.position)
+                BooleanType
+            }
+            is LogicalOperation -> {
+                assertType(BooleanType, leftType, left.position)
+                assertType(BooleanType, rightType, right.position)
+                BooleanType
+            }
             else -> TODO()
+        }
+    }
+
+    private fun assertType(expectedType: Type, foundType: Type?, position: SourcePosition?) {
+        if (foundType != null && expectedType != foundType) {
+            messageCollector.add(ExpectedExpressionTypeMessage(expectedType, foundType, position))
+        }
+    }
+
+    private fun assertNumericType(type: Type, position: SourcePosition?) {
+        if (!type.isNumeric()) {
+            messageCollector.add(ExpectedNumericOperandMessage(type, position))
         }
     }
 
     private fun resolve(compoundStatement: CompoundStatement, scope: Scope) {
         compoundStatement.statements.forEach {
-            when (it) {
-                is FunctionStatement -> resolve(it.functionCall, scope)
-                is Assignment -> resolve(it, scope)
-                is ReturnStatement -> resolve(it, scope)
-                else -> TODO("stmt=$it")
-            }
+            resolve(it, scope)
         }
+    }
+
+    private fun resolve(statement: Statement, scope: Scope) {
+        when (statement) {
+            is FunctionStatement -> resolve(statement.functionCall, scope)
+            is AssignmentStatement -> resolve(statement, scope)
+            is ReturnStatement -> resolve(statement, scope)
+            is IfStatement -> resolve(statement, scope)
+            else -> TODO("stmt=$statement")
+        }
+    }
+
+    private fun resolve(statement: IfStatement, scope: Scope) {
+        resolve(statement.condition, scope)
+        assertType(BooleanType, statement.condition.type, statement.condition.position)
+        resolve(statement.thenBranch, scope)
+        statement.elseBranch?.let { resolve(it, scope) }
     }
 
     private fun Type.isAssignableFrom(type: Type): Boolean {
@@ -165,17 +201,17 @@ class Context(private val messageCollector: MessageCollector) {
         }
     }
 
-    private fun resolve(assignment: Assignment, scope: Scope) {
-        resolve(assignment.variable, scope)
-        resolve(assignment.expression, scope)
-        assignment.expression.type?.let { expressionType ->
-            assignment.variable.type?.let { variableType ->
+    private fun resolve(assignmentStatement: AssignmentStatement, scope: Scope) {
+        resolve(assignmentStatement.variable, scope)
+        resolve(assignmentStatement.expression, scope)
+        assignmentStatement.expression.type?.let { expressionType ->
+            assignmentStatement.variable.type?.let { variableType ->
                 if (!variableType.isAssignableFrom(expressionType)) {
                     messageCollector.add(
                         TypeIsNotAssignableMessage(
                             variableType,
                             expressionType,
-                            assignment.position
+                            assignmentStatement.position
                         )
                     )
                 }

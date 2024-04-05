@@ -4,10 +4,7 @@ import org.jpascal.compiler.frontend.ir.FunctionDeclaration
 import org.jpascal.compiler.frontend.ir.Program
 import org.jpascal.compiler.frontend.ir.SourcePosition
 import org.jpascal.compiler.frontend.ir.VariableDeclaration
-import org.jpascal.compiler.frontend.ir.types.IntegerType
-import org.jpascal.compiler.frontend.ir.types.RealType
-import org.jpascal.compiler.frontend.ir.types.Type
-import org.jpascal.compiler.frontend.ir.types.UnitType
+import org.jpascal.compiler.frontend.ir.types.*
 import org.jpascal.compiler.frontend.resolve.JvmField
 import java.io.File
 
@@ -20,6 +17,7 @@ fun Type.toJvmType(): String =
         is IntegerType -> "I"
         is RealType -> "D"
         is UnitType -> "V"
+        is BooleanType -> "Z"
         else -> TODO(this.toString())
     }
 

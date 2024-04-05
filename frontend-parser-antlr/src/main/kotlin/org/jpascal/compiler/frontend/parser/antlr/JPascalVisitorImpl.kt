@@ -165,7 +165,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.assignmentStatement()?.let {
                 val expression = visitExpression(it.expression())
                 val variable = visitSelector(it.selector())
-                return Assignment(variable, expression, label, mkPosition(ctx.position))
+                return AssignmentStatement(variable, expression, label, mkPosition(ctx.position))
             }
             stmt.emptyStatement_()?.let { return null }
             stmt.procedureStatement()?.let {
@@ -178,8 +178,21 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             }
             TODO()
         }
+        ctx.unlabelledStatement().structuredStatement()?.let { stmt ->
+            stmt.conditionalStatement()?.ifStatement()?.let {
+                return visitIfStatement(it)
+            }
+            TODO()
+        }
         TODO()
     }
+
+    override fun visitIfStatement(ctx: JPascalParser.IfStatementContext): IfStatement =
+        IfStatement(
+            condition = visitExpression(ctx.expression()),
+            thenBranch = visitStatement(ctx.statement(0)!!)!!,
+            elseBranch = ctx.statement(1)?.let( ::visitStatement)
+        )
 
     override fun visitProcedureStatement(ctx: JPascalParser.ProcedureStatementContext): FunctionCall {
         val args = ctx.parameterList()?.actualParameter()?.map {
@@ -197,15 +210,25 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     override fun visitAdditiveoperator(ctx: JPascalParser.AdditiveoperatorContext): Operation {
         if (ctx.PLUS() != null) return ArithmeticOperation.PLUS
         if (ctx.MINUS() != null) return ArithmeticOperation.MINUS
+        if (ctx.OR() != null) return LogicalOperation.OR
+        if (ctx.XOR() != null) return LogicalOperation.XOR
         TODO()
     }
 
     override fun visitMultiplicativeoperator(ctx: JPascalParser.MultiplicativeoperatorContext): Operation {
         if (ctx.STAR() != null) return ArithmeticOperation.TIMES
+        if (ctx.AND() != null) return LogicalOperation.AND
         TODO()
     }
 
     override fun visitRelationaloperator(ctx: JPascalParser.RelationaloperatorContext): Operation {
+        if (ctx.EQUAL() != null) return RelationalOperation.EQ
+        if (ctx.NOT_EQUAL() != null) return RelationalOperation.NEQ
+        if (ctx.GT() != null) return RelationalOperation.GT
+        if (ctx.GE() != null) return RelationalOperation.GE
+        if (ctx.LT() != null) return RelationalOperation.LT
+        if (ctx.LE() != null) return RelationalOperation.LE
+        // IN
         TODO()
     }
 
@@ -256,6 +279,12 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.functionDesignator()?.let {
             return visitFunctionDesignator(it)
         }
+        ctx.bool_()?.let {
+            if (it.TRUE() != null) return BooleanLiteral(true, mkPosition(ctx.position))
+            if (it.FALSE() != null) return BooleanLiteral(false, mkPosition(ctx.position))
+            TODO()
+        }
+        if (ctx.NOT() != null) return UnaryExpression(LogicalOperation.NOT, visitFactor(ctx.factor()!!))
         TODO()
     }
 

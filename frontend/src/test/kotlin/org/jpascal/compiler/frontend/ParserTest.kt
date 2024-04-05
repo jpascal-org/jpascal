@@ -57,7 +57,7 @@ class ParserTest : BaseFrontendTest() {
             declarations = Declarations(),
             compoundStatement = CompoundStatement(
                 listOf(
-                    Assignment(
+                    AssignmentStatement(
                         variable = Variable(
                             "foo",
                             position = mkPosition(Position(3, 5), Position(3, 8))

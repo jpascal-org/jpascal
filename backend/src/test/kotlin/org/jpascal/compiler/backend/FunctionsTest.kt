@@ -1,20 +1,16 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
 import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
-import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
-import org.jpascal.compiler.frontend.parser.api.ParserFacade
 import org.jpascal.compiler.frontend.parser.api.Source
 import org.jpascal.compiler.frontend.resolve.Context
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class FunctionsAndExpressionsTest {
+class FunctionsTest : BaseBackendTest() {
 
     private fun dummyPosition(filename: String) =
         SourcePosition(filename, Position(0, 0), Position(0, 0))
@@ -350,8 +346,6 @@ class FunctionsAndExpressionsTest {
         }
     }
 
-    private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
-
     private fun createFunction(expression: Expression, position: SourcePosition): FunctionDeclaration {
         fun collectVariables(expression: Expression, acc: MutableList<Variable>) {
             when (expression) {
@@ -397,17 +391,4 @@ class FunctionsAndExpressionsTest {
             compoundStatement = null,
             position = position
         )
-
-    private fun writeResult(result: CompilationResult) {
-        File("/tmp/jpascal/${result.className}.class").writeBytes(result.bytecode)
-    }
-
-    private fun Map<String, ByteArray>.toClasses(): Map<String, Class<*>> {
-        val loader = ByteArrayClassLoader(this)
-        return mapValues { loader.loadClass(it.key) }
-    }
-
-    private fun List<CompilationResult>.toMap() = this.associate { it.className to it.bytecode }
-
-    private fun CompilationResult.getClass(): Class<*> = listOf(this).toMap().toClasses()[this.className]!!
 }

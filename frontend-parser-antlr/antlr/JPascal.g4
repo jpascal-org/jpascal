@@ -381,6 +381,7 @@ additiveoperator
     : PLUS
     | MINUS
     | OR
+    | XOR
     ;
 
 term
@@ -652,6 +653,10 @@ OF
 
 OR
     : 'OR'
+    ;
+
+XOR
+    : 'XOR'
     ;
 
 PACKED
