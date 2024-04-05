@@ -21,7 +21,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             packageName = ctx.packagePart()?.fullyQualifiedName()?.text,
             uses = ctx.usesPart().map(::visitUsesPart),
             declarations = declarations,
-            compoundStatement = compoundStatement ?: CompoundStatement(listOf()),
+            compoundStatement = compoundStatement,
             position = mkPosition(ctx.position)
         )
         return program

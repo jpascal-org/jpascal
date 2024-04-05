@@ -12,6 +12,7 @@ import org.jpascal.compiler.frontend.resolve.Context
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class FunctionsAndExpressionsTest {
 
@@ -33,8 +34,8 @@ class FunctionsAndExpressionsTest {
             position = position
         )
         val program = createProgram(position, function)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod(function.identifier).invoke(null)
@@ -88,8 +89,8 @@ class FunctionsAndExpressionsTest {
             position = position
         )
         val program = createProgram(position, function)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         return clazz.getMethod(function.identifier).invoke(null) as Int
@@ -107,8 +108,8 @@ class FunctionsAndExpressionsTest {
             ), position
         )
         val program = createProgram(position, function)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod(function.identifier, Int::class.java, Int::class.java).invoke(null, 5, 10)
@@ -129,8 +130,8 @@ class FunctionsAndExpressionsTest {
             ), position
         )
         val program = createProgram(position, function)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod(function.identifier, Int::class.java, Int::class.java).invoke(null, 10, 6)
@@ -151,8 +152,8 @@ class FunctionsAndExpressionsTest {
             ), position
         )
         val program = createProgram(position, function)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod(function.identifier, Double::class.java, Double::class.java).invoke(null, 10.0, 6.0)
@@ -180,8 +181,8 @@ class FunctionsAndExpressionsTest {
             )
         )
         context.resolve(program)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod("foo", Int::class.java, Int::class.java).invoke(null, 3, 6)
@@ -210,8 +211,8 @@ class FunctionsAndExpressionsTest {
             )
         )
         context.resolve(program)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod("foo", Double::class.java, Double::class.java).invoke(null, 3.0, 6.0)
@@ -236,8 +237,8 @@ class FunctionsAndExpressionsTest {
             )
         )
         context.resolve(program)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod("foo", Double::class.java, Double::class.java).invoke(null, 3.0, 6.0)
@@ -263,12 +264,90 @@ class FunctionsAndExpressionsTest {
             )
         )
         context.resolve(program)
-        val generator = ProgramGenerator()
-        val result = generator.generate(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
         writeResult(result)
         val clazz = result.getClass()
         val r = clazz.getMethod("foo", Int::class.java).invoke(null, 2)
         assertEquals(4, r)
+    }
+
+    @Test
+    fun emptyMain() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "EmptyMain.pas",
+                """
+                begin
+                end.
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
+        writeResult(result)
+        val clazz = result.getClass()
+        clazz.getMethod("main", Array<String>::class.java)
+    }
+
+    @Test
+    fun notEmptyMain() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "NotEmptyMain.pas",
+                """
+                var x: integer;
+                begin
+                   x := 10;
+                end.
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
+        writeResult(result)
+        val clazz = result.getClass()
+        clazz.getMethod("main", Array<String>::class.java).invoke(null, arrayOf<String>())
+        val x = clazz.getDeclaredField("x")
+        x.trySetAccessible()
+        assertEquals(10, x.get(null))
+    }
+
+    @Test
+    fun noMain() {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "NoMain.pas",
+                """
+                function foo(x: integer): integer;
+                begin
+                    return x + 1;
+                end;
+                """.trimIndent()
+            )
+        )
+        context.resolve(program)
+        val generator = ProgramGenerator(program)
+        val result = generator.generate()
+        writeResult(result)
+        val clazz = result.getClass()
+        try {
+            clazz.getMethod("main", Array<String>::class.java)
+            fail()
+        } catch (e: NoSuchMethodException) {
+            // do nothing
+        }
     }
 
     private fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
@@ -315,7 +394,7 @@ class FunctionsAndExpressionsTest {
                 functions = listOf(function),
                 variables = listOf()
             ),
-            compoundStatement = CompoundStatement(listOf()),
+            compoundStatement = null,
             position = position
         )
 

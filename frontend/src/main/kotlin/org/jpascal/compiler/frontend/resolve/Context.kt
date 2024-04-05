@@ -199,6 +199,6 @@ class Context(private val messageCollector: MessageCollector) {
         program.declarations.functions.forEach {
             resolve(it, scope)
         }
-        resolve(program.compoundStatement, scope)
+        program.compoundStatement?.let { resolve(it, scope) }
     }
 }

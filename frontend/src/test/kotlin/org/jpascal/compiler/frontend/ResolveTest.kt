@@ -32,7 +32,7 @@ class ResolveTest : BaseFrontendTest() {
             )
         )
         context.resolve(program)
-        val stmt = program.compoundStatement.statements[0] as FunctionStatement
+        val stmt = program.compoundStatement!!.statements[0] as FunctionStatement
         assertEquals(
             JvmMethod(
                 owner = "org/jpascal/stdlib/PreludeKt",
@@ -257,7 +257,7 @@ class ResolveTest : BaseFrontendTest() {
         context.add(program)
         context.resolve(program)
         assertEquals(0, messageCollector.list().size)
-        val call = ((program.compoundStatement.statements[0] as Assignment).expression as FunctionCall).resolved
+        val call = ((program.compoundStatement!!.statements[0] as Assignment).expression as FunctionCall).resolved
         val func = program.declarations.functions[1].jvmMethod
         assertEquals(func, call)
     }

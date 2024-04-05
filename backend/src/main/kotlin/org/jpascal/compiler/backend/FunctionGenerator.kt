@@ -2,10 +2,7 @@ package org.jpascal.compiler.backend
 
 import org.jpascal.compiler.common.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.types.BooleanType
-import org.jpascal.compiler.frontend.ir.types.IntegerType
-import org.jpascal.compiler.frontend.ir.types.RealType
-import org.jpascal.compiler.frontend.ir.types.Type
+import org.jpascal.compiler.frontend.ir.types.*
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type as AsmType
 import org.objectweb.asm.commons.LocalVariablesSorter
@@ -27,6 +24,7 @@ class FunctionGenerator(
             localVars[it.name] = id
         }
         function.compoundStatement.statements.forEach(::generateStatement)
+        if (function.returnType == UnitType) mv.visitInsn(Opcodes.RETURN)
         mv.visitMaxs(maxStack, maxLocals)
     }
 
@@ -69,7 +67,7 @@ class FunctionGenerator(
     }
 
     private fun generateFunctionCall(functionCall: FunctionCall) {
-        val jvmSymbol = functionCall.resolved!!
+        val jvmSymbol = functionCall.resolved ?: throw UnresolvedSymbolError(functionCall.identifier)
         functionCall.arguments.forEach {
             generateExpression(it)
         }
