@@ -257,7 +257,8 @@ class ResolveTest : BaseFrontendTest() {
         context.add(program)
         context.resolve(program)
         assertEquals(0, messageCollector.list().size)
-        val call = ((program.compoundStatement!!.statements[0] as AssignmentStatement).expression as FunctionCall).resolved
+        val call =
+            ((program.compoundStatement!!.statements[0] as AssignmentStatement).expression as FunctionCall).resolved
         val func = program.declarations.functions[1].jvmMethod
         assertEquals(func, call)
     }
@@ -344,6 +345,49 @@ class ResolveTest : BaseFrontendTest() {
                 } ?: fail()
             } ?: fail()
         }
+    }
 
+    @Test
+    fun conditionMustBeBoolean() =
+        program(
+            "ConditionMustBeBoolean.pas",
+            """
+                var x: integer;
+                begin
+                    x := 10;
+                    if x then 
+                        x := x + 1
+                    else
+                        x := x - 1;
+                end.
+            """.trimIndent()
+        ).list().let { list ->
+            assertEquals(1, list.size)
+            assertTrue(list[0] is ExpectedExpressionTypeMessage)
+        }
+
+    @Test
+    fun inconsistentExpressionParts() =
+        program(
+            "InconsistentExpressionParts.pas",
+            """
+                var x: integer;
+                begin
+                    x := 10 and true;
+                end.
+            """.trimIndent()
+        ).list().let { list ->
+            assertEquals(1, list.size)
+            assertTrue(list[0] is UnmatchedExpressionPartTypes)
+        }
+
+    private fun program(filename: String, code: String): MessageCollector {
+        val messageCollector = MessageCollector()
+        val context = Context(messageCollector)
+        val parser = createParserFacade()
+        val program = parser.parse(Source(filename, code))
+        context.add(program)
+        context.resolve(program)
+        return messageCollector
     }
 }

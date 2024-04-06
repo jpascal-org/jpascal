@@ -138,16 +138,27 @@ class Context(private val messageCollector: MessageCollector) {
                 BooleanType
             }
             is LogicalOperation -> {
-                assertType(BooleanType, leftType, left.position)
-                assertType(BooleanType, rightType, right.position)
-                BooleanType
+                // to support bitwise operations
+                val allowedTypes = listOf(BooleanType, IntegerType)
+                assertType(allowedTypes, leftType, left.position)
+                assertType(allowedTypes, rightType, right.position)
+                if (leftType != rightType) {
+                    messageCollector.add(UnmatchedExpressionPartTypes(leftType, rightType, expression.position))
+                    null
+                } else {
+                    leftType
+                }
             }
             else -> TODO()
         }
     }
 
     private fun assertType(expectedType: Type, foundType: Type?, position: SourcePosition?) {
-        if (foundType != null && expectedType != foundType) {
+        assertType(listOf(expectedType), foundType, position)
+    }
+
+    private fun assertType(expectedType: List<Type>, foundType: Type?, position: SourcePosition?) {
+        if (foundType != null && !expectedType.contains(foundType)) {
             messageCollector.add(ExpectedExpressionTypeMessage(expectedType, foundType, position))
         }
     }

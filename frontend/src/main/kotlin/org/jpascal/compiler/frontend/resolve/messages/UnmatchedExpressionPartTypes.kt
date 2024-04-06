@@ -5,6 +5,6 @@ import org.jpascal.compiler.common.MessageLevel
 import org.jpascal.compiler.frontend.ir.SourcePosition
 import org.jpascal.compiler.frontend.ir.types.Type
 
-class ExpectedExpressionTypeMessage(val expected: List<Type>, val foundType: Type, override val position: SourcePosition?) : Message {
+data class UnmatchedExpressionPartTypes(val type1: Type, val type2: Type, override val position: SourcePosition?) : Message {
     override val level: MessageLevel = MessageLevel.ERROR
 }
