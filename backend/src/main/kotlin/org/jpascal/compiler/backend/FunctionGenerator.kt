@@ -244,7 +244,30 @@ class FunctionGenerator(
                 ArithmeticOperation.PLUS -> generateArithmetics(expression, Opcodes.IADD, Opcodes.DADD)
                 ArithmeticOperation.MINUS -> generateArithmetics(expression, Opcodes.ISUB, Opcodes.DSUB)
                 ArithmeticOperation.TIMES -> generateArithmetics(expression, Opcodes.IMUL, Opcodes.DMUL)
+                is RelationalOperation -> {
+                    val label = Label()
+                    generateBooleanExpression(expression, label)
+                    mv.visitLabel(label)
+                }
                 else -> TODO("Op=${expression.op}")
+            }
+
+            is BooleanLiteral -> {
+                val label = Label()
+                generateBooleanExpression(expression, label)
+                mv.visitLabel(label)
+            }
+
+            is FunctionCall -> {
+                val jvmMethod = expression.resolved!!
+                expression.arguments.forEach(::generateExpression)
+                mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    jvmMethod.owner,
+                    jvmMethod.name,
+                    jvmMethod.descriptor,
+                    false
+                )
             }
 
             else -> TODO("Expression=$expression")
@@ -256,7 +279,7 @@ class FunctionGenerator(
             generateExpression(it)
         }
         when (function.returnType) {
-            IntegerType -> mv.visitInsn(Opcodes.IRETURN)
+            IntegerType, BooleanType -> mv.visitInsn(Opcodes.IRETURN)
             RealType -> mv.visitInsn(Opcodes.DRETURN)
             else -> TODO()
         }

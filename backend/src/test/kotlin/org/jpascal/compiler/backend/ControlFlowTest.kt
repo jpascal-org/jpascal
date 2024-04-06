@@ -120,4 +120,47 @@ class ControlFlowTest : BaseBackendTest() {
         assertEquals(1, method.invoke(null, false))
         assertEquals(0, method.invoke(null, true))
     }
+
+    @Test
+    fun shortCircuit() {
+        fun myProgram(op: String) =
+            program(
+            "ShortCircuit.pas",
+            """
+            var 
+                touched: boolean;
+                z: integer;
+            function bar(y: boolean): boolean;
+            begin
+                touched := true;
+                return y;
+            end;
+            procedure foo(x, y: boolean);
+            begin
+                if x $op bar(y) then
+                    z := 1
+                else
+                    z := 0;
+            end;
+            """.trimIndent()
+        )
+        myProgram("and").let {
+            val method = it.getMethod("foo", Boolean::class.java, Boolean::class.java)
+            val touched = it.getDeclaredField("touched")
+            touched.trySetAccessible()
+            method.invoke(null, false, true)
+            assertEquals(false, touched.getBoolean(null))
+            method.invoke(null, true, false)
+            assertEquals(true, touched.getBoolean(null))
+        }
+        myProgram("or").let {
+            val method = it.getMethod("foo", Boolean::class.java, Boolean::class.java)
+            val touched = it.getDeclaredField("touched")
+            touched.trySetAccessible()
+            method.invoke(null, true, false)
+            assertEquals(false, touched.getBoolean(null))
+            method.invoke(null, false, false)
+            assertEquals(true, touched.getBoolean(null))
+        }
+    }
 }

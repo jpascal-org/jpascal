@@ -10,12 +10,16 @@ import java.io.File
 import kotlin.test.assertEquals
 
 abstract class BaseBackendTest {
-    protected fun program(filename: String, code: String): Class<*> {
+    protected fun program(filename: String, code: String, ctx: Context? = null): Class<*> {
         val messageCollector = MessageCollector()
-        val context = Context(messageCollector)
+        val context = ctx ?: Context(messageCollector)
         val parser = createParserFacade()
         val program = parser.parse(Source(filename, code))
+        context.add(program)
         context.resolve(program)
+        messageCollector.list().forEach {
+            println(it)
+        }
         assertEquals(0, messageCollector.list().size)
         val generator = ProgramGenerator(program)
         val result = generator.generate()

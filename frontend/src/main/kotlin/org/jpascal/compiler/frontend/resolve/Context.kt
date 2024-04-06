@@ -28,6 +28,7 @@ class Context(private val messageCollector: MessageCollector) {
             "I" -> IntegerType
             "D" -> RealType
             "V" -> UnitType
+            "Z" -> BooleanType
             else -> TODO("type=$returnType")
         }
 
