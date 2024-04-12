@@ -229,9 +229,8 @@ class FunctionGenerator(
                 val index = localVars[expression.name]
                 if (index != null) {
                     when (expression.type) {
-                        is IntegerType -> mv.visitVarInsn(Opcodes.ILOAD, index)
+                        is IntegerType, BooleanType -> mv.visitVarInsn(Opcodes.ILOAD, index)
                         is RealType -> mv.visitVarInsn(Opcodes.DLOAD, index)
-                        is BooleanType -> mv.visitVarInsn(Opcodes.ILOAD, index)
                         else -> TODO()
                     }
                 } else {

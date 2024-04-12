@@ -5,6 +5,7 @@ import org.jpascal.compiler.common.ir.getJvmClassName
 import org.jpascal.compiler.common.ir.getJvmDescriptor
 import org.jpascal.compiler.common.ir.globalVariableJvmField
 import org.jpascal.compiler.common.ir.toJvmType
+import org.jpascal.compiler.frontend.controlflow.MissingReturnStatementAnalyzer
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
 import org.jpascal.compiler.frontend.resolve.messages.*
@@ -12,6 +13,7 @@ import org.objectweb.asm.ClassReader
 
 class Context(private val messageCollector: MessageCollector) {
     private val externalFunctions = mutableMapOf<String, MutableList<JvmMethod>>()
+    private val missingReturnStatementAnalyzer = MissingReturnStatementAnalyzer(messageCollector)
 
     private fun JvmMethod.getTypeSignature(): String = descriptor.substring(1, descriptor.indexOf(')'))
     private fun FunctionCall.getTypeSignature(): String =
@@ -233,6 +235,7 @@ class Context(private val messageCollector: MessageCollector) {
 
     private fun resolve(functionDeclaration: FunctionDeclaration, scope: Scope) {
         // TODO: support nested functions
+        missingReturnStatementAnalyzer.analyze(functionDeclaration)
         resolve(functionDeclaration.compoundStatement, scope.join(functionDeclaration))
     }
 

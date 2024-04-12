@@ -380,14 +380,4 @@ class ResolveTest : BaseFrontendTest() {
             assertEquals(1, list.size)
             assertTrue(list[0] is UnmatchedExpressionPartTypes)
         }
-
-    private fun program(filename: String, code: String): MessageCollector {
-        val messageCollector = MessageCollector()
-        val context = Context(messageCollector)
-        val parser = createParserFacade()
-        val program = parser.parse(Source(filename, code))
-        context.add(program)
-        context.resolve(program)
-        return messageCollector
-    }
 }
