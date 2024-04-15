@@ -10,7 +10,7 @@ import java.io.File
 import kotlin.test.assertEquals
 
 abstract class BaseBackendTest {
-    protected fun program(filename: String, code: String, ctx: Context? = null): Class<*> {
+    protected fun compile(filename: String, code: String, ctx: Context? = null): Class<*> {
         val messageCollector = MessageCollector()
         val context = ctx ?: Context(messageCollector)
         val parser = createParserFacade()

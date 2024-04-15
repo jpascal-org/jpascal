@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 class ControlFlowTest : BaseBackendTest() {
     @Test
     fun ifStatement() {
-        val method = program(
+        val method = compile(
             "IfStatement.pas",
             """
             function foo(x: integer): integer;
@@ -24,7 +24,7 @@ class ControlFlowTest : BaseBackendTest() {
 
     @Test
     fun relationalOperations() {
-        fun method(op: String) = program(
+        fun method(op: String) = compile(
             "RelationalOperations.pas",
             """
             function foo(x: integer): integer;
@@ -71,7 +71,7 @@ class ControlFlowTest : BaseBackendTest() {
 
     @Test
     fun logicalOperations() {
-        fun method(op: String) = program(
+        fun method(op: String) = compile(
             "LogicalOperations.pas",
             """
             function foo(x: boolean; y: boolean): integer;
@@ -105,7 +105,7 @@ class ControlFlowTest : BaseBackendTest() {
 
     @Test
     fun logicalNot() {
-        val method = program(
+        val method = compile(
             "LogicalOperations.pas",
             """
             function foo(x: boolean): integer;
@@ -124,7 +124,7 @@ class ControlFlowTest : BaseBackendTest() {
     @Test
     fun shortCircuit() {
         fun myProgram(op: String) =
-            program(
+            compile(
                 "ShortCircuit.pas",
                 """
             var 
@@ -166,7 +166,7 @@ class ControlFlowTest : BaseBackendTest() {
 
     @Test
     fun whileLoop() =
-        program(
+        compile(
             "WhileLoop.pas",
             """
             function foo(n: integer): integer;

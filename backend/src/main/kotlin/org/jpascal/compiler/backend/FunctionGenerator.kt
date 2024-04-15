@@ -68,16 +68,16 @@ class FunctionGenerator(
         mv.visitLabel(exit)
     }
 
-    private fun generateIf(ifStatement: IfStatement) {
+    private fun generateIf(statement: IfStatement) {
         val label = Label()
-        generateBooleanExpression(ifStatement.condition, label)
+        generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
         val elseLabel = Label()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, elseLabel)
-        generateStatement(ifStatement.thenBranch)
+        generateStatement(statement.thenBranch)
         mv.visitLabel(elseLabel)
-        ifStatement.elseBranch?.let(::generateStatement)
+        statement.elseBranch?.let(::generateStatement)
     }
 
     private fun generateBooleanExpression(expression: Expression, exit: Label) {
