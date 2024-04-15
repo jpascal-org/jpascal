@@ -185,6 +185,9 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.repetetiveStatement()?.whileStatement()?.let {
                 return visitWhileStatement(it)
             }
+            stmt.repetetiveStatement()?.repeatStatement()?.let {
+                return visitRepeatStatement(it)
+            }
             stmt.compoundStatement()?.let {
                 return visitCompoundStatement(it)
             }
@@ -192,6 +195,12 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         }
         TODO()
     }
+
+    override fun visitRepeatStatement(ctx: JPascalParser.RepeatStatementContext): RepeatStatement =
+        RepeatStatement(
+            visitExpression(ctx.expression()),
+            CompoundStatement(ctx.statements().statement().mapNotNull(::visitStatement))
+        )
 
     override fun visitWhileStatement(ctx: JPascalParser.WhileStatementContext): WhileStatement =
         WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement())!!)

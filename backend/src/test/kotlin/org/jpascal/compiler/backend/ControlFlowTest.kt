@@ -189,4 +189,29 @@ class ControlFlowTest : BaseBackendTest() {
             assertEquals(3, it.invoke(null, 2))
             assertEquals(6, it.invoke(null, 3))
         }
+
+    @Test
+    fun repeatUntilLoop() =
+        compile(
+            "RepeatUntilLoop.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                repeat
+                    result := result + i;
+                    i := i + 1;
+                until i > n;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(1, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
 }

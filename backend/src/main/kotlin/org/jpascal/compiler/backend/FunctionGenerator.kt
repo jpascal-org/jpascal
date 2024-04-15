@@ -49,9 +49,21 @@ class FunctionGenerator(
             is ReturnStatement -> generateReturn(statement)
             is IfStatement -> generateIf(statement)
             is WhileStatement -> generateWhile(statement)
+            is RepeatStatement -> generateRepeat(statement)
             is CompoundStatement -> statement.statements.forEach(::generateStatement)
             else -> TODO()
         }
+    }
+
+    private fun generateRepeat(statement: RepeatStatement) {
+        val start = Label()
+        mv.visitLabel(start)
+        generateStatement(statement.statement)
+        val label = Label()
+        generateBooleanExpression(statement.condition, label)
+        mv.visitLabel(label)
+        mv.visitInsn(Opcodes.ICONST_1)
+        mv.visitJumpInsn(Opcodes.IF_ICMPNE, start)
     }
 
     private fun generateWhile(statement: WhileStatement) {

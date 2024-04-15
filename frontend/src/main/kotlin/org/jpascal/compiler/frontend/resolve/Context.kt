@@ -186,8 +186,15 @@ class Context(private val messageCollector: MessageCollector) {
             is IfStatement -> resolve(statement, scope)
             is WhileStatement -> resolve(statement, scope)
             is CompoundStatement -> resolve(statement, scope)
+            is RepeatStatement -> resolve(statement, scope)
             else -> TODO("stmt=$statement")
         }
+    }
+
+    private fun resolve(statement: RepeatStatement, scope: Scope) {
+        resolve(statement.condition, scope)
+        assertType(BooleanType, statement.condition.type, statement.condition.position)
+        resolve(statement.statement ,scope)
     }
 
     private fun resolve(statement: WhileStatement, scope: Scope) {
