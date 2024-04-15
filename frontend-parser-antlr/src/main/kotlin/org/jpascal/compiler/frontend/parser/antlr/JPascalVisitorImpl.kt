@@ -182,10 +182,19 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.conditionalStatement()?.ifStatement()?.let {
                 return visitIfStatement(it)
             }
+            stmt.repetetiveStatement()?.whileStatement()?.let {
+                return visitWhileStatement(it)
+            }
+            stmt.compoundStatement()?.let {
+                return visitCompoundStatement(it)
+            }
             TODO()
         }
         TODO()
     }
+
+    override fun visitWhileStatement(ctx: JPascalParser.WhileStatementContext): WhileStatement =
+        WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement())!!)
 
     override fun visitIfStatement(ctx: JPascalParser.IfStatementContext): IfStatement =
         IfStatement(

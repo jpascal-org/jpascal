@@ -125,8 +125,8 @@ class ControlFlowTest : BaseBackendTest() {
     fun shortCircuit() {
         fun myProgram(op: String) =
             program(
-            "ShortCircuit.pas",
-            """
+                "ShortCircuit.pas",
+                """
             var 
                 touched: boolean;
                 z: integer;
@@ -143,7 +143,7 @@ class ControlFlowTest : BaseBackendTest() {
                     z := 0;
             end;
             """.trimIndent()
-        )
+            )
         myProgram("and").let {
             val method = it.getMethod("foo", Boolean::class.java, Boolean::class.java)
             val touched = it.getDeclaredField("touched")
@@ -163,4 +163,30 @@ class ControlFlowTest : BaseBackendTest() {
             assertEquals(true, touched.getBoolean(null))
         }
     }
+
+    @Test
+    fun whileLoop() =
+        program(
+            "WhileLoop.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                while i <= n do 
+                begin
+                    result := result + i;
+                    i := i + 1;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
 }
