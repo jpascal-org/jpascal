@@ -8,13 +8,13 @@ import kotlin.test.assertTrue
 class ControlFlowAnalysisTest : BaseFrontendTest() {
     @Test
     fun missingReturnInFunction() =
-        program(
+        resolve(
             "MissingReturnInFunction.pas",
             """
-            function foo: integer;
-            begin
-            end;
-            """.trimIndent()
+                function foo: integer;
+                begin
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
             assertTrue(it.list()[0] is MissingReturnStatementMessage)
@@ -22,32 +22,32 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
 
     @Test
     fun noReturnInProcedure() =
-        program(
+        resolve(
             "NoReturnInProcedure.pas",
             """
-            procedure foo;
-            begin
-            end;
-            """.trimIndent()
+                procedure foo;
+                begin
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(0, it.list().size)
         }
 
     @Test
     fun missingReturnInThenBranch() =
-        program(
+        resolve(
             "MissingReturnInThenBranch.pas",
             """
-            function foo: integer;
-            var
-                x: integer;
-            begin
-                if false then
-                    x := 1
-                else
-                    return 1;
-            end;
-            """.trimIndent()
+                function foo: integer;
+                var
+                    x: integer;
+                begin
+                    if false then
+                        x := 1
+                    else
+                        return 1;
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
             assertTrue(it.list()[0] is MissingReturnStatementMessage)
@@ -55,19 +55,19 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
 
     @Test
     fun missingReturnInElseBranch() =
-        program(
+        resolve(
             "MissingReturnInElseBranch.pas",
             """
-            function foo: integer;
-            var
-                x: integer;
-            begin
-                if false then
-                    return 1
-                else
-                    x := 1;
-            end;
-            """.trimIndent()
+                function foo: integer;
+                var
+                    x: integer;
+                begin
+                    if false then
+                        return 1
+                    else
+                        x := 1;
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
             assertTrue(it.list()[0] is MissingReturnStatementMessage)
@@ -75,16 +75,16 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
 
     @Test
     fun missingReturnNoElse() =
-        program(
+        resolve(
             "MissingReturnNoElse.pas",
             """
-            function foo: integer;
-            var
-                x: integer;
-            begin
-                if false then return 1;
-            end;
-            """.trimIndent()
+                function foo: integer;
+                var
+                    x: integer;
+                begin
+                    if false then return 1;
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
             assertTrue(it.list()[0] is MissingReturnStatementMessage)
@@ -92,20 +92,20 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
 
     @Test
     fun globalReturnWithoutReturnInElseBranch() =
-        program(
+        resolve(
             "GlobalReturnWithoutReturnInElseBranch.pas",
             """
-            function foo: integer;
-            var
-                x: integer;
-            begin
-                if false then
-                    return 1
-                else
-                    x := 1;
-                return 0;
-            end;
-            """.trimIndent()
+                function foo: integer;
+                var
+                    x: integer;
+                begin
+                    if false then
+                        return 1
+                    else
+                        x := 1;
+                    return 0;
+                end;
+                """.trimIndent()
         ).let {
             assertEquals(0, it.list().size)
         }

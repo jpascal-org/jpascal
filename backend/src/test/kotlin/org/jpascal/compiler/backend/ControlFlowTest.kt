@@ -214,4 +214,73 @@ class ControlFlowTest : BaseBackendTest() {
             assertEquals(3, it.invoke(null, 2))
             assertEquals(6, it.invoke(null, 3))
         }
+
+    @Test
+    fun forLoop() =
+        compile(
+            "ForLoop.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                result := 0;
+                for i := 1 to n do 
+                    result := result + i;
+                return result;
+            end;    
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun forDownToLoop() =
+        compile(
+            "ForDownToLoop.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                result := 0;
+                for i := n downto 1 do 
+                    result := result + i;
+                return result;
+            end;    
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun forLoopGlobalVar() =
+        compile(
+            "ForLoopGlobal.pas",
+            """
+            var i: integer;
+            function foo(n: integer): integer;
+            var
+                result: integer;
+            begin
+                result := 0;
+                for i := n downto 1 do 
+                    result := result + i;
+                return result;
+            end;
+            begin
+            end.
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
 }

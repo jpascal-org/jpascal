@@ -188,6 +188,9 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.repetetiveStatement()?.repeatStatement()?.let {
                 return visitRepeatStatement(it)
             }
+            stmt.repetetiveStatement()?.forStatement()?.let {
+                return visitForStatement(it)
+            }
             stmt.compoundStatement()?.let {
                 return visitCompoundStatement(it)
             }
@@ -195,6 +198,16 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         }
         TODO()
     }
+
+    override fun visitForStatement(ctx: JPascalParser.ForStatementContext): ForStatement =
+        ForStatement(
+            Variable(ctx.identifier().text, mkPosition(ctx.position)),
+            visitExpression(ctx.forList().initialValue().expression()),
+            visitExpression(ctx.forList().finalValue().expression()),
+            ctx.forList().DOWNTO() != null,
+            visitStatement(ctx.statement())!!,
+            position = mkPosition(ctx.position)
+        )
 
     override fun visitRepeatStatement(ctx: JPascalParser.RepeatStatementContext): RepeatStatement =
         RepeatStatement(

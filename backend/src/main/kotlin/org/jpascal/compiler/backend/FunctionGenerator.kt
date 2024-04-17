@@ -50,9 +50,58 @@ class FunctionGenerator(
             is IfStatement -> generateIf(statement)
             is WhileStatement -> generateWhile(statement)
             is RepeatStatement -> generateRepeat(statement)
+            is ForStatement -> generateFor(statement)
             is CompoundStatement -> statement.statements.forEach(::generateStatement)
             else -> TODO()
         }
+    }
+
+    private fun generateFor(statement: ForStatement) {
+        generateAssignment(statement.variable, statement.initialValue)
+        val variableType = statement.variable.type!!
+        val finalValue = mv.newLocal(AsmType.getType(variableType.toJvmType()))
+        generateExpression(statement.finalValue)
+        storeVariable(finalValue, variableType)
+        val start = Label()
+        mv.visitLabel(start)
+        loadVariable(statement.variable)
+        loadVariable(finalValue, variableType)
+        val exit = Label()
+        if (statement.isDecrement) {
+            mv.visitJumpInsn(Opcodes.IF_ICMPLT, exit)
+            generateStatement(statement.statement)
+            decrement(statement.variable)
+        } else {
+            mv.visitJumpInsn(Opcodes.IF_ICMPGT, exit)
+            generateStatement(statement.statement)
+            increment(statement.variable)
+        }
+        mv.visitJumpInsn(Opcodes.GOTO, start)
+        mv.visitLabel(exit)
+    }
+
+    private fun increment(variable: Variable) {
+        loadVariable(variable)
+        when (variable.type) {
+            IntegerType -> {
+                mv.visitInsn(Opcodes.ICONST_1)
+                mv.visitInsn(Opcodes.IADD)
+            }
+            else -> TODO()
+        }
+        storeVariable(variable)
+    }
+
+    private fun decrement(variable: Variable) {
+        loadVariable(variable)
+        when (variable.type) {
+            IntegerType -> {
+                mv.visitInsn(Opcodes.ICONST_1)
+                mv.visitInsn(Opcodes.ISUB)
+            }
+            else -> TODO()
+        }
+        storeVariable(variable)
     }
 
     private fun generateRepeat(statement: RepeatStatement) {
@@ -188,16 +237,43 @@ class FunctionGenerator(
         }
     }
 
-    private fun generateAssignment(statement: AssignmentStatement) {
-        generateExpression(statement.expression)
-        localVars[statement.variable.name]?.let { id ->
-            when (statement.variable.type) {
-                IntegerType -> mv.visitVarInsn(Opcodes.ISTORE, id)
-                RealType -> mv.visitVarInsn(Opcodes.DSTORE, id)
-                else -> TODO()
-            }
-        } ?: statement.variable.jvmField!!.let {
+    private fun generateAssignment(statement: AssignmentStatement) =
+        generateAssignment(statement.variable, statement.expression)
+
+    private fun generateAssignment(variable: Variable, expression: Expression) {
+        generateExpression(expression)
+        storeVariable(variable)
+    }
+
+    private fun storeVariable(variable: Variable) {
+        localVars[variable.name]?.let { id ->
+            storeVariable(id, variable.type!!)
+        } ?: variable.jvmField!!.let {
             mv.visitFieldInsn(Opcodes.PUTSTATIC, it.owner, it.name, it.descriptor)
+        }
+    }
+
+    private fun loadVariable(variable: Variable) {
+        localVars[variable.name]?.let { id ->
+            loadVariable(id, variable.type!!)
+        } ?: variable.jvmField!!.let {
+            mv.visitFieldInsn(Opcodes.GETSTATIC, it.owner, it.name, it.descriptor)
+        }
+    }
+
+    private fun storeVariable(id: Int, type: Type) {
+        when (type) {
+            IntegerType -> mv.visitVarInsn(Opcodes.ISTORE, id)
+            RealType -> mv.visitVarInsn(Opcodes.DSTORE, id)
+            else -> TODO()
+        }
+    }
+
+    private fun loadVariable(id: Int, type: Type) {
+        when (type) {
+            IntegerType -> mv.visitVarInsn(Opcodes.ILOAD, id)
+            RealType -> mv.visitVarInsn(Opcodes.DLOAD, id)
+            else -> TODO()
         }
     }
 

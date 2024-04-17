@@ -121,6 +121,12 @@ class Context(private val messageCollector: MessageCollector) {
             else -> false
         }
 
+    private fun Type.isInt() =
+        when (this) {
+            is IntType -> true
+            else -> false
+        }
+
     private fun getExpressionType(expression: TreeExpression): Type? {
         val (op, left, right) = expression
         val leftType = left.type ?: return null
@@ -166,9 +172,15 @@ class Context(private val messageCollector: MessageCollector) {
         }
     }
 
-    private fun assertNumericType(type: Type, position: SourcePosition?) {
-        if (!type.isNumeric()) {
+    private fun assertNumericType(type: Type?, position: SourcePosition?) {
+        if (type != null && !type.isNumeric()) {
             messageCollector.add(ExpectedNumericOperandMessage(type, position))
+        }
+    }
+
+    private fun assertIntType(type: Type?, position: SourcePosition?) {
+        if (type != null && !type.isInt()) {
+            messageCollector.add(ExpectedExpressionTypeMessage(INT_TYPES, type, position))
         }
     }
 
@@ -184,11 +196,23 @@ class Context(private val messageCollector: MessageCollector) {
             is AssignmentStatement -> resolve(statement, scope)
             is ReturnStatement -> resolve(statement, scope)
             is IfStatement -> resolve(statement, scope)
-            is WhileStatement -> resolve(statement, scope)
             is CompoundStatement -> resolve(statement, scope)
+            is WhileStatement -> resolve(statement, scope)
             is RepeatStatement -> resolve(statement, scope)
+            is ForStatement -> resolve(statement, scope)
             else -> TODO("stmt=$statement")
         }
+    }
+
+    private fun resolve(statement: ForStatement, scope: Scope) {
+        resolve(statement.variable, scope)
+        resolve(statement.initialValue, scope)
+        assertIntType(statement.initialValue.type, statement.initialValue.position)
+        resolve(statement.finalValue, scope)
+        assertIntType(statement.finalValue.type, statement.finalValue.position)
+        assertIsAssignableFrom(statement.variable, statement.initialValue)
+        assertIsAssignableFrom(statement.variable, statement.finalValue)
+        resolve(statement.statement, scope)
     }
 
     private fun resolve(statement: RepeatStatement, scope: Scope) {
@@ -222,7 +246,7 @@ class Context(private val messageCollector: MessageCollector) {
             if (scope.returnType == UnitType) {
                 messageCollector.add(ProcedureCannotReturnValueMessage(returnStatement.position))
             } else if (it.type != null && !scope.returnType.isAssignableFrom(it.type!!)) {
-                messageCollector.add(TypeIsNotAssignableMessage(scope.returnType, it.type!!, returnStatement.position))
+                messageCollector.add(IncompatibleReturnTypeMessage(scope.returnType, it.type!!, returnStatement.position))
             }
         } ?: if (scope.returnType != UnitType) {
             messageCollector.add(ExpectedReturnValueMessage(scope.returnType, returnStatement.position))
@@ -233,16 +257,14 @@ class Context(private val messageCollector: MessageCollector) {
     private fun resolve(assignmentStatement: AssignmentStatement, scope: Scope) {
         resolve(assignmentStatement.variable, scope)
         resolve(assignmentStatement.expression, scope)
-        assignmentStatement.expression.type?.let { expressionType ->
-            assignmentStatement.variable.type?.let { variableType ->
+        assertIsAssignableFrom(assignmentStatement.variable, assignmentStatement.expression)
+    }
+
+    private fun assertIsAssignableFrom(variable: Variable, expression: Expression) {
+        expression.type?.let { expressionType ->
+            variable.type?.let { variableType ->
                 if (!variableType.isAssignableFrom(expressionType)) {
-                    messageCollector.add(
-                        TypeIsNotAssignableMessage(
-                            variableType,
-                            expressionType,
-                            assignmentStatement.position
-                        )
-                    )
+                    messageCollector.add(VariableTypeIsNotAssignableMessage(variable, expression))
                 }
             }
         }
@@ -266,5 +288,9 @@ class Context(private val messageCollector: MessageCollector) {
             resolve(it, scope)
         }
         program.compoundStatement?.let { resolve(it, scope) }
+    }
+
+    companion object {
+        val INT_TYPES = listOf(IntegerType)
     }
 }
