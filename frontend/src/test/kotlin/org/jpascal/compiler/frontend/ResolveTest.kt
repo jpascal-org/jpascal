@@ -145,10 +145,10 @@ class ResolveTest : BaseFrontendTest() {
         context.resolve(program)
         messageCollector.list().let { messages ->
             assertEquals(1, messages.size)
-            assertTrue(messages[0] is TypeIsNotAssignableMessage)
-            val message = (messages[0] as TypeIsNotAssignableMessage)
-            assertEquals(IntegerType, message.lhsType)
-            assertEquals(StringType, message.rhsType)
+            assertTrue(messages[0] is VariableTypeIsNotAssignableMessage)
+            val message = (messages[0] as VariableTypeIsNotAssignableMessage)
+            assertEquals(IntegerType, message.variable.type!!)
+            assertEquals(StringType, message.expression.type!!)
         }
     }
 
@@ -172,10 +172,10 @@ class ResolveTest : BaseFrontendTest() {
         context.resolve(program)
         messageCollector.list().let {
             assertEquals(1, it.size)
-            assertTrue(it[0] is TypeIsNotAssignableMessage)
-            val message = it[0] as TypeIsNotAssignableMessage
-            assertEquals(IntegerType, message.lhsType)
-            assertEquals(RealType, message.rhsType)
+            assertTrue(it[0] is IncompatibleReturnTypeMessage)
+            val message = it[0] as IncompatibleReturnTypeMessage
+            assertEquals(IntegerType, message.functionType)
+            assertEquals(RealType, message.returnType)
         }
     }
 
@@ -349,18 +349,18 @@ class ResolveTest : BaseFrontendTest() {
 
     @Test
     fun conditionMustBeBoolean() =
-        program(
+        resolve(
             "ConditionMustBeBoolean.pas",
             """
-                var x: integer;
-                begin
-                    x := 10;
-                    if x then 
-                        x := x + 1
-                    else
-                        x := x - 1;
-                end.
-            """.trimIndent()
+                    var x: integer;
+                    begin
+                        x := 10;
+                        if x then 
+                            x := x + 1
+                        else
+                            x := x - 1;
+                    end.
+                """.trimIndent()
         ).list().let { list ->
             assertEquals(1, list.size)
             assertTrue(list[0] is ExpectedExpressionTypeMessage)
@@ -368,14 +368,14 @@ class ResolveTest : BaseFrontendTest() {
 
     @Test
     fun inconsistentExpressionParts() =
-        program(
+        resolve(
             "InconsistentExpressionParts.pas",
             """
-                var x: integer;
-                begin
-                    x := 10 and true;
-                end.
-            """.trimIndent()
+                    var x: integer;
+                    begin
+                        x := 10 and true;
+                    end.
+                """.trimIndent()
         ).list().let { list ->
             assertEquals(1, list.size)
             assertTrue(list[0] is UnmatchedExpressionPartTypes)

@@ -9,7 +9,7 @@ import org.jpascal.compiler.frontend.resolve.Context
 abstract class BaseFrontendTest {
     protected fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
 
-    protected fun program(filename: String, code: String): MessageCollector {
+    protected fun resolve(filename: String, code: String): MessageCollector {
         val messageCollector = MessageCollector()
         val context = Context(messageCollector)
         val parser = createParserFacade()
