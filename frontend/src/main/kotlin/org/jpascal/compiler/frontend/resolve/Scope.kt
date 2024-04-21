@@ -1,8 +1,9 @@
 package org.jpascal.compiler.frontend.resolve
 
-import org.jpascal.compiler.common.MessageCollector
+import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.Type
+import org.jpascal.compiler.frontend.ir.types.UnitType
 import org.jpascal.compiler.frontend.resolve.messages.ElementIsAlreadyDefinedMessage
 
 class Scope(
@@ -10,11 +11,13 @@ class Scope(
     formalParameters: List<FormalParameter>,
     declarations: Declarations,
     externalFunctions: Map<String, MutableList<JvmMethod>>,
-    val returnType: Type,
+    element: PositionedElement,
     val parent: Scope? = null
 ) {
     private val variables = mutableMapOf<String, TypedDeclaration>()
     private val functions = mutableMapOf<String, MutableList<JvmMethod>>()
+    val packageName: String? = if (element is Program) element.packageName else parent?.packageName
+    val returnType = if (element is FunctionDeclaration) element.returnType else UnitType
 
     init {
         formalParameters.forEach {
@@ -44,7 +47,7 @@ class Scope(
                 variables = functionDeclaration.declarations.variables
             ),
             mapOf(),
-            functionDeclaration.returnType,
+            functionDeclaration,
             parent = this
         )
     }

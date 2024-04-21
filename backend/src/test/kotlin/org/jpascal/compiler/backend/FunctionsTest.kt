@@ -1,6 +1,6 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.common.MessageCollector
+import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
@@ -174,7 +174,7 @@ class FunctionsTest : BaseBackendTest() {
                     return result;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -204,7 +204,7 @@ class FunctionsTest : BaseBackendTest() {
                     return result;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -230,7 +230,7 @@ class FunctionsTest : BaseBackendTest() {
                     return x + 2 * y;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -257,7 +257,7 @@ class FunctionsTest : BaseBackendTest() {
                     return x * x;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -280,7 +280,7 @@ class FunctionsTest : BaseBackendTest() {
                 begin
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -304,7 +304,7 @@ class FunctionsTest : BaseBackendTest() {
                    x := 10;
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)
@@ -331,7 +331,7 @@ class FunctionsTest : BaseBackendTest() {
                     return x + 1;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val generator = ProgramGenerator(program)

@@ -1,6 +1,6 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.common.ir.toJvmType
+import org.jpascal.compiler.frontend.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
 import org.objectweb.asm.Label
@@ -87,6 +87,7 @@ class FunctionGenerator(
                 mv.visitInsn(Opcodes.ICONST_1)
                 mv.visitInsn(Opcodes.IADD)
             }
+
             else -> TODO()
         }
         storeVariable(variable)
@@ -99,6 +100,7 @@ class FunctionGenerator(
                 mv.visitInsn(Opcodes.ICONST_1)
                 mv.visitInsn(Opcodes.ISUB)
             }
+
             else -> TODO()
         }
         storeVariable(variable)
@@ -233,6 +235,7 @@ class FunctionGenerator(
                 mv.visitLabel(label)
                 mv.visitInsn(Opcodes.ISUB)
             }
+
             else -> generateExpression(expression)
         }
     }
@@ -352,6 +355,7 @@ class FunctionGenerator(
                     generateBooleanExpression(expression, label)
                     mv.visitLabel(label)
                 }
+
                 else -> TODO("Op=${expression.op}")
             }
 
@@ -373,6 +377,7 @@ class FunctionGenerator(
                 )
             }
 
+            is StringLiteral -> mv.visitLdcInsn(expression.value)
             else -> TODO("Expression=$expression")
         }
     }

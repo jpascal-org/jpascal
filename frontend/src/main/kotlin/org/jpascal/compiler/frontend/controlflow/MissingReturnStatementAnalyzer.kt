@@ -1,6 +1,6 @@
 package org.jpascal.compiler.frontend.controlflow
 
-import org.jpascal.compiler.common.MessageCollector
+import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.controlflow.messages.MissingReturnStatementMessage
 import org.jpascal.compiler.frontend.ir.*
 

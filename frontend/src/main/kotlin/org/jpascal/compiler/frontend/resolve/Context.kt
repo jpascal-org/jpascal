@@ -1,10 +1,10 @@
 package org.jpascal.compiler.frontend.resolve
 
-import org.jpascal.compiler.common.MessageCollector
-import org.jpascal.compiler.common.ir.getJvmClassName
-import org.jpascal.compiler.common.ir.getJvmDescriptor
-import org.jpascal.compiler.common.ir.globalVariableJvmField
-import org.jpascal.compiler.common.ir.toJvmType
+import org.jpascal.compiler.frontend.MessageCollector
+import org.jpascal.compiler.frontend.ir.getJvmClassName
+import org.jpascal.compiler.frontend.ir.getJvmDescriptor
+import org.jpascal.compiler.frontend.ir.globalVariableJvmField
+import org.jpascal.compiler.frontend.ir.toJvmType
 import org.jpascal.compiler.frontend.controlflow.MissingReturnStatementAnalyzer
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
@@ -39,7 +39,7 @@ class Context(private val messageCollector: MessageCollector) {
         program.declarations.functions.forEach { func ->
             val className = program.getJvmClassName()
             val jvmMethod = JvmMethod(
-                owner = program.packageName?.let { "$it.$className" } ?: className,
+                owner = className,
                 name = func.identifier,
                 descriptor = func.getJvmDescriptor()
             )
@@ -91,7 +91,7 @@ class Context(private val messageCollector: MessageCollector) {
         } else {
             variable.type = decl.type
             if (declarationScope.parent == null) variable.jvmField =
-                (decl as VariableDeclaration).globalVariableJvmField()
+                (decl as VariableDeclaration).globalVariableJvmField(scope.packageName)
         }
     }
 
@@ -282,7 +282,7 @@ class Context(private val messageCollector: MessageCollector) {
             listOf(),
             program.declarations.copy(functions = listOf()),
             externalFunctions,
-            UnitType
+            program
         )
         program.declarations.functions.forEach {
             resolve(it, scope)

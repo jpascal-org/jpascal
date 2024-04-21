@@ -1,7 +1,6 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.backend.utils.ByteArrayClassLoader
-import org.jpascal.compiler.common.MessageCollector
+import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
 import org.jpascal.compiler.frontend.parser.api.ParserFacade
 import org.jpascal.compiler.frontend.parser.api.Source
@@ -14,7 +13,7 @@ abstract class BaseBackendTest {
         val messageCollector = MessageCollector()
         val context = ctx ?: Context(messageCollector)
         val parser = createParserFacade()
-        val program = parser.parse(Source(filename, code))
+        val program = parser.parse(Source(filename, code), messageCollector)
         context.add(program)
         context.resolve(program)
         messageCollector.list().forEach {
@@ -27,18 +26,33 @@ abstract class BaseBackendTest {
         return result.getClass()
     }
 
+    protected fun compile(sources: List<Source>, ctx: Context? = null): Map<String, Class<*>> {
+        val messageCollector = MessageCollector()
+        val context = ctx ?: Context(messageCollector)
+        val parsed = sources.map {
+            val parser = createParserFacade()
+            parser.parse(it, messageCollector)
+        }
+        parsed.forEach(context::add)
+        parsed.forEach(context::resolve)
+        messageCollector.list().forEach {
+            println(it)
+        }
+        assertEquals(0, messageCollector.list().size)
+        return parsed.map {
+            val generator = ProgramGenerator(it)
+            val result = generator.generate()
+            writeResult(result)
+            result
+        }.toMap().toClasses()
+    }
+
     protected fun writeResult(result: CompilationResult) {
-        File("/tmp/jpascal/${result.className}.class").writeBytes(result.bytecode)
+        result.write("/tmp/jpascal")
     }
 
-    private fun Map<String, ByteArray>.toClasses(): Map<String, Class<*>> {
-        val loader = ByteArrayClassLoader(this)
-        return mapValues { loader.loadClass(it.key) }
-    }
-
-    private fun List<CompilationResult>.toMap() = this.associate { it.className to it.bytecode }
-
-    protected fun CompilationResult.getClass(): Class<*> = listOf(this).toMap().toClasses()[this.className]!!
+    protected fun CompilationResult.getClass(): Class<*> =
+        listOf(this).toMap().toClasses()[this.className.replace('/', '.')]!!
 
     protected fun createParserFacade(): ParserFacade = AntlrParserFacadeImpl()
 }

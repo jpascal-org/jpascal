@@ -1,6 +1,5 @@
 package org.jpascal.compiler.frontend
 
-import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
 import org.jpascal.compiler.frontend.parser.api.ParserFacade
 import org.jpascal.compiler.frontend.parser.api.Source
@@ -13,7 +12,7 @@ abstract class BaseFrontendTest {
         val messageCollector = MessageCollector()
         val context = Context(messageCollector)
         val parser = createParserFacade()
-        val program = parser.parse(Source(filename, code))
+        val program = parser.parse(Source(filename, code), messageCollector)
         context.add(program)
         context.resolve(program)
         return messageCollector

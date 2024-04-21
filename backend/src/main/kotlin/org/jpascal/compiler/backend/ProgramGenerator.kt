@@ -1,8 +1,8 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.common.ir.getJvmClassName
-import org.jpascal.compiler.common.ir.getJvmDescriptor
-import org.jpascal.compiler.common.ir.globalVariableJvmField
+import org.jpascal.compiler.frontend.ir.getJvmClassName
+import org.jpascal.compiler.frontend.ir.getJvmDescriptor
+import org.jpascal.compiler.frontend.ir.globalVariableJvmField
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.UnitType
 import org.objectweb.asm.ClassWriter
@@ -30,7 +30,7 @@ class ProgramGenerator(private val program: Program) {
     }
 
     private fun generateGlobalVariable(variable: VariableDeclaration) {
-        val field = variable.globalVariableJvmField()
+        val field = variable.globalVariableJvmField(program.packageName)
         cw.visitField(
             Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC,
             field.name,

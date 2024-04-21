@@ -11,6 +11,7 @@ import kotlin.test.assertNotNull
 class ParserTest : BaseFrontendTest() {
     @Test
     fun helloWorld() {
+        val messageCollector = MessageCollector()
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
@@ -21,7 +22,7 @@ class ParserTest : BaseFrontendTest() {
                     readln;
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         println(program)
     }
@@ -31,6 +32,7 @@ class ParserTest : BaseFrontendTest() {
         fun mkPosition(start: Position, end: Position): SourcePosition =
             SourcePosition("SimpleFunction.pas", start, end)
 
+        val messageCollector = MessageCollector()
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
@@ -41,7 +43,7 @@ class ParserTest : BaseFrontendTest() {
                     foo := x + y;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         assertNotNull(program.declarations)
         val func = FunctionDeclaration(
@@ -83,6 +85,7 @@ class ParserTest : BaseFrontendTest() {
 
     @Test
     fun packageAndUses() {
+        val messageCollector = MessageCollector()
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
@@ -99,7 +102,7 @@ class ParserTest : BaseFrontendTest() {
                     readln;
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         assertEquals("org.company", program.packageName)
         assertEquals(3, program.uses.size)
@@ -110,6 +113,7 @@ class ParserTest : BaseFrontendTest() {
 
     @Test
     fun privateAndProtected() {
+        val messageCollector = MessageCollector()
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
@@ -124,7 +128,7 @@ class ParserTest : BaseFrontendTest() {
                     bar := x + y;
                 end;    
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         assertEquals(Access.PRIVATE, program.declarations.functions[0].access)
         assertEquals(Access.PROTECTED, program.declarations.functions[1].access)

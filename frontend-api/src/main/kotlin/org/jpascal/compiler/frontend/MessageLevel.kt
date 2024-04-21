@@ -1,4 +1,4 @@
-package org.jpascal.compiler.common
+package org.jpascal.compiler.frontend
 
 enum class MessageLevel {
     ERROR,

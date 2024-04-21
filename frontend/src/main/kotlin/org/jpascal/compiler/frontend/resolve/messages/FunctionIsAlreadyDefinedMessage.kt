@@ -1,7 +1,7 @@
 package org.jpascal.compiler.frontend.resolve.messages
 
-import org.jpascal.compiler.common.Message
-import org.jpascal.compiler.common.MessageLevel
+import org.jpascal.compiler.frontend.Message
+import org.jpascal.compiler.frontend.MessageLevel
 import org.jpascal.compiler.frontend.ir.SourcePosition
 import org.jpascal.compiler.frontend.resolve.JvmMethod
 

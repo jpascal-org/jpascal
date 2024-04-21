@@ -1,4 +1,4 @@
-package org.jpascal.compiler.backend.utils
+package org.jpascal.compiler.backend
 
 import java.net.URL
 import java.net.URLClassLoader

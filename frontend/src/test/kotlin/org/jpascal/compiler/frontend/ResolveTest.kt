@@ -1,6 +1,5 @@
 package org.jpascal.compiler.frontend
 
-import org.jpascal.compiler.common.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.IntegerType
 import org.jpascal.compiler.frontend.ir.types.RealType
@@ -29,7 +28,7 @@ class ResolveTest : BaseFrontendTest() {
                     writeln('Hello World.');
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         val stmt = program.compoundStatement!!.statements[0] as FunctionStatement
@@ -55,7 +54,7 @@ class ResolveTest : BaseFrontendTest() {
                     writeln('Hello World.');
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         messageCollector.list().let { messages ->
@@ -79,7 +78,7 @@ class ResolveTest : BaseFrontendTest() {
                     return bar(x);
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         val program2 = parser.parse(
             Source(
@@ -90,7 +89,7 @@ class ResolveTest : BaseFrontendTest() {
                     return foo(x);
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program1)
         context.add(program2)
@@ -115,7 +114,7 @@ class ResolveTest : BaseFrontendTest() {
                     x := 'Hello';
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.resolve(program)
         messageCollector.list().let { messages ->
@@ -139,7 +138,7 @@ class ResolveTest : BaseFrontendTest() {
                     x := 'Hello';
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         println(program)
         context.resolve(program)
@@ -166,7 +165,7 @@ class ResolveTest : BaseFrontendTest() {
                     return x;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)
@@ -193,7 +192,7 @@ class ResolveTest : BaseFrontendTest() {
                     return;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)
@@ -219,7 +218,7 @@ class ResolveTest : BaseFrontendTest() {
                     return 2;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)
@@ -252,7 +251,7 @@ class ResolveTest : BaseFrontendTest() {
                     x := foo(0.1, 2);
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)
@@ -285,7 +284,7 @@ class ResolveTest : BaseFrontendTest() {
                     x := foo(0.1, 2.0);
                 end.
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)
@@ -314,7 +313,7 @@ class ResolveTest : BaseFrontendTest() {
                     return x + z;
                 end;
                 """.trimIndent()
-            )
+            ), messageCollector
         )
         context.add(program)
         context.resolve(program)

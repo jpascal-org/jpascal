@@ -1,16 +1,17 @@
-package org.jpascal.compiler.common.ir
+package org.jpascal.compiler.frontend.ir
 
-import org.jpascal.compiler.frontend.ir.FunctionDeclaration
-import org.jpascal.compiler.frontend.ir.Program
-import org.jpascal.compiler.frontend.ir.SourcePosition
-import org.jpascal.compiler.frontend.ir.VariableDeclaration
 import org.jpascal.compiler.frontend.ir.types.*
 import org.jpascal.compiler.frontend.resolve.JvmField
 import java.io.File
 
-fun Program.getJvmClassName() = jvmClassName(this.position!!)
+fun Program.getJvmClassName() = jvmClassName(packageName, this.position!!)
 
-private fun jvmClassName(position: SourcePosition) = File(position.filename).nameWithoutExtension + "Pas"
+private fun jvmClassName(packageName: String?, position: SourcePosition): String {
+    val name = File(position.filename).nameWithoutExtension + "Pas"
+    return packageName?.let {
+        it.replace('.', '/') + '/' + name
+    } ?: name
+}
 
 fun Type.toJvmType(): String =
     when (this) {
@@ -32,5 +33,5 @@ fun FunctionDeclaration.getJvmDescriptor(): String {
     return sb.toString()
 }
 
-fun VariableDeclaration.globalVariableJvmField(): JvmField =
-    JvmField(jvmClassName(this.position!!), this.name, this.type.toJvmType())
+fun VariableDeclaration.globalVariableJvmField(packageName: String?): JvmField =
+    JvmField(jvmClassName(packageName, this.position!!), this.name, this.type.toJvmType())
