@@ -1,8 +1,6 @@
 package org.jpascal.compiler.backend
 
-import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.parser.api.Source
-import org.jpascal.compiler.frontend.resolve.Context
 import kotlin.test.Test
 
 class PackageTest : BaseBackendTest() {

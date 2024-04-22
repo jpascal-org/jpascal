@@ -2,7 +2,6 @@ package org.jpascal.compiler.frontend.resolve
 
 import org.jpascal.compiler.frontend.MessageCollector
 import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.types.Type
 import org.jpascal.compiler.frontend.ir.types.UnitType
 import org.jpascal.compiler.frontend.resolve.messages.ElementIsAlreadyDefinedMessage
 

@@ -5,7 +5,6 @@ import org.jpascal.compiler.frontend.parser.antlr.AntlrParserFacadeImpl
 import org.jpascal.compiler.frontend.parser.api.ParserFacade
 import org.jpascal.compiler.frontend.parser.api.Source
 import org.jpascal.compiler.frontend.resolve.Context
-import java.io.File
 import kotlin.test.assertEquals
 
 abstract class BaseBackendTest {
