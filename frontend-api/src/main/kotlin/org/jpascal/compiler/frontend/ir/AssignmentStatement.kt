@@ -5,4 +5,4 @@ data class AssignmentStatement(
     val expression: Expression,
     override val label: Label? = null,
     override val position: SourcePosition? = null
-) : Statement, PositionedElement
+) : Statement

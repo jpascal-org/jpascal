@@ -1,5 +1,5 @@
 package org.jpascal.compiler.frontend.ir
 
-interface Statement {
+interface Statement : PositionedElement {
     val label: Label?
 }

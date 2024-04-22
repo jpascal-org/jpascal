@@ -8,4 +8,4 @@ data class ForStatement(
     val statement: Statement,
     override val label: Label? = null,
     override val position: SourcePosition?
-) : Statement, PositionedElement
+) : Statement

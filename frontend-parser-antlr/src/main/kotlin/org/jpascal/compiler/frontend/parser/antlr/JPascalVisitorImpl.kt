@@ -51,6 +51,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         }
         return variables
     }
+
     override fun visitVariableDeclaration(ctx: JPascalParser.VariableDeclarationContext): List<VariableDeclaration> {
         return ctx.identifierList().identifier().map {
             VariableDeclaration(it.text, visitType_(ctx.type_()), null, mkPosition(ctx.position))
@@ -170,7 +171,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             stmt.emptyStatement_()?.let { return null }
             stmt.procedureStatement()?.let {
                 val call = visitProcedureStatement(it)
-                return FunctionStatement(call, label)
+                return FunctionStatement(call, label, mkPosition(ctx.position))
             }
             stmt.returnStatement()?.let {
                 val expression = it.expression()?.let(::visitExpression)
@@ -212,17 +213,22 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     override fun visitRepeatStatement(ctx: JPascalParser.RepeatStatementContext): RepeatStatement =
         RepeatStatement(
             visitExpression(ctx.expression()),
-            CompoundStatement(ctx.statements().statement().mapNotNull(::visitStatement))
+            CompoundStatement(ctx.statements().statement().mapNotNull(::visitStatement)),
+            position = mkPosition(ctx.position)
         )
 
     override fun visitWhileStatement(ctx: JPascalParser.WhileStatementContext): WhileStatement =
-        WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement())!!)
+        WhileStatement(
+            visitExpression(ctx.expression()),
+            visitStatement(ctx.statement())!!,
+            position = mkPosition(ctx.position)
+        )
 
     override fun visitIfStatement(ctx: JPascalParser.IfStatementContext): IfStatement =
         IfStatement(
             condition = visitExpression(ctx.expression()),
             thenBranch = visitStatement(ctx.statement(0)!!)!!,
-            elseBranch = ctx.statement(1)?.let( ::visitStatement)
+            elseBranch = ctx.statement(1)?.let(::visitStatement)
         )
 
     override fun visitProcedureStatement(ctx: JPascalParser.ProcedureStatementContext): FunctionCall {
