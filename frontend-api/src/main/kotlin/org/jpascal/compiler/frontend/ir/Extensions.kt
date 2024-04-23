@@ -19,6 +19,7 @@ fun Type.toJvmType(): String =
         is RealType -> "D"
         is UnitType -> "V"
         is BooleanType -> "Z"
+        is StringType -> "Ljava/lang/String;"
         else -> TODO(this.toString())
     }
 

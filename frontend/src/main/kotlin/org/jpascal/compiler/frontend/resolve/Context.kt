@@ -71,8 +71,10 @@ class Context(private val messageCollector: MessageCollector) {
         functionCall.arguments.forEach { resolve(it, scope) }
         scope.findFunctionCandidates(functionCall.identifier)?.let { candidates ->
             if (candidates.size == 1) {
-                functionCall.resolved = candidates[0]
-                functionCall.type = candidates[0].getReturnType()
+                if (candidates[0].matchSignature(functionCall)) {
+                    functionCall.resolved = candidates[0]
+                    functionCall.type = candidates[0].getReturnType()
+                } else messageCollector.add(CannotResolveFunctionMessage(functionCall))
             } else {
                 candidates.find { method -> method.matchSignature(functionCall) }?.let { method ->
                     functionCall.resolved = method

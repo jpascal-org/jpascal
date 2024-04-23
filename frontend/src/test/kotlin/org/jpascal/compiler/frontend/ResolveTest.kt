@@ -397,4 +397,23 @@ class ResolveTest : BaseFrontendTest() {
             assertEquals(1, list.size)
             assertTrue(list[0] is FunctionIsAlreadyDefinedMessage)
         }
+
+    @Test
+    fun signatureDoesNotMatch() {
+        resolve(
+            "SignatureDoesNotMatch.pas",
+            """
+            function foo: integer;
+            begin
+                return 1;
+            end;
+            begin
+                foo(1);
+            end.
+            """.trimIndent()
+        ).list().let { list ->
+            assertEquals(1, list.size)
+            assertTrue(list[0] is CannotResolveFunctionMessage)
+        }
+    }
 }
