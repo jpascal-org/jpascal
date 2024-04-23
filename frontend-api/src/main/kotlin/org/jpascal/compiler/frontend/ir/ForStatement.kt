@@ -6,6 +6,6 @@ data class ForStatement(
     val finalValue: Expression,
     val isDecrement: Boolean,
     val statement: Statement,
-    override val label: Label? = null,
+    override var label: Label? = null,
     override val position: SourcePosition?
 ) : Statement
