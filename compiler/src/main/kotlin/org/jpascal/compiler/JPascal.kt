@@ -23,7 +23,7 @@ object JPascal {
         }
         if (messageCollector.list().isNotEmpty()) throw ParseError(messageCollector.list())
         val context = Context(messageCollector)
-        context.addSystemLibrary("org.jpascal.stdlib.PreludeKt")
+        context.addExternalLibrary("org.jpascal.stdlib.PreludeKt")
         parsed.forEach(context::add)
         parsed.forEach(context::resolve)
         if (messageCollector.list().isNotEmpty()) throw ResolveError(messageCollector.list())

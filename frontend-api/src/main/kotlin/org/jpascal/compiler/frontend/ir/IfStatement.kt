@@ -4,6 +4,6 @@ data class IfStatement(
     val condition: Expression,
     val thenBranch: Statement,
     val elseBranch: Statement?,
-    override val label: Label? = null,
+    override var label: Label? = null,
     override val position: SourcePosition? = null
 ) : Statement

@@ -162,43 +162,55 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
 
     override fun visitStatement(ctx: JPascalParser.StatementContext): Statement? {
         val label = ctx.label()?.let { Label(it.text) }
-        ctx.unlabelledStatement().simpleStatement()?.let { stmt ->
-            stmt.assignmentStatement()?.let {
-                val expression = visitExpression(it.expression())
-                val variable = visitSelector(it.selector())
-                return AssignmentStatement(variable, expression, label, mkPosition(ctx.position))
-            }
-            stmt.emptyStatement_()?.let { return null }
-            stmt.procedureStatement()?.let {
-                val call = visitProcedureStatement(it)
-                return FunctionStatement(call, label, mkPosition(ctx.position))
-            }
-            stmt.returnStatement()?.let {
-                val expression = it.expression()?.let(::visitExpression)
-                return ReturnStatement(expression, label, mkPosition(ctx.position))
-            }
-            TODO()
+        val unlabelledStatement = ctx.unlabelledStatement()
+        val statement = unlabelledStatement
+            .simpleStatement()
+            ?.let(::visitSimpleStatement) ?: unlabelledStatement
+            .structuredStatement()
+            ?.let(::visitStructuredStatement)
+        statement?.let {
+            it.label = label
         }
-        ctx.unlabelledStatement().structuredStatement()?.let { stmt ->
-            stmt.conditionalStatement()?.ifStatement()?.let {
-                return visitIfStatement(it)
-            }
-            stmt.repetetiveStatement()?.whileStatement()?.let {
-                return visitWhileStatement(it)
-            }
-            stmt.repetetiveStatement()?.repeatStatement()?.let {
-                return visitRepeatStatement(it)
-            }
-            stmt.repetetiveStatement()?.forStatement()?.let {
-                return visitForStatement(it)
-            }
-            stmt.compoundStatement()?.let {
-                return visitCompoundStatement(it)
-            }
-            TODO()
+        return statement
+    }
+
+    override fun visitSimpleStatement(ctx: JPascalParser.SimpleStatementContext): Statement? {
+        ctx.assignmentStatement()?.let {
+            val expression = visitExpression(it.expression())
+            val variable = visitSelector(it.selector())
+            return AssignmentStatement(variable, expression, null, mkPosition(ctx.position))
+        }
+        ctx.emptyStatement_()?.let { return null }
+        ctx.procedureStatement()?.let {
+            val call = visitProcedureStatement(it)
+            return FunctionStatement(call, null, mkPosition(ctx.position))
+        }
+        ctx.returnStatement()?.let {
+            val expression = it.expression()?.let(::visitExpression)
+            return ReturnStatement(expression, null, mkPosition(ctx.position))
         }
         TODO()
     }
+
+    override fun visitStructuredStatement(ctx: JPascalParser.StructuredStatementContext): Statement {
+        ctx.conditionalStatement()?.ifStatement()?.let {
+            return visitIfStatement(it)
+        }
+        ctx.repetetiveStatement()?.whileStatement()?.let {
+            return visitWhileStatement(it)
+        }
+        ctx.repetetiveStatement()?.repeatStatement()?.let {
+            return visitRepeatStatement(it)
+        }
+        ctx.repetetiveStatement()?.forStatement()?.let {
+            return visitForStatement(it)
+        }
+        ctx.compoundStatement()?.let {
+            return visitCompoundStatement(it)
+        }
+        TODO()
+    }
+
 
     override fun visitForStatement(ctx: JPascalParser.ForStatementContext): ForStatement =
         ForStatement(
