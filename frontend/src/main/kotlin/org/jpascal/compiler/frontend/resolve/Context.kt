@@ -12,7 +12,7 @@ import org.jpascal.compiler.frontend.resolve.messages.*
 import org.objectweb.asm.ClassReader
 
 class Context(private val messageCollector: MessageCollector) {
-    private val externalFunctions = mutableMapOf<String, MutableList<JvmMethod>>()
+    private val functions = mutableMapOf<String, MutableList<JvmMethod>>()
     private val missingReturnStatementAnalyzer = MissingReturnStatementAnalyzer(messageCollector)
 
     private fun JvmMethod.getTypeSignature(): String = descriptor.substring(1, descriptor.indexOf(')'))
@@ -44,25 +44,25 @@ class Context(private val messageCollector: MessageCollector) {
                 descriptor = func.getJvmDescriptor()
             )
             func.jvmMethod = jvmMethod
-            addToExternal(func.identifier, jvmMethod)
+            addFunction(func.identifier, jvmMethod)
         }
     }
 
-    private fun addToExternal(functionName: String, jvmMethod: JvmMethod) {
-        val externals = externalFunctions.getOrPut(functionName) { mutableListOf() }
-        externals.find { it.getTypeSignature() == jvmMethod.getTypeSignature() }?.let {
+    private fun addFunction(functionName: String, jvmMethod: JvmMethod) {
+        val overloaded = functions.getOrPut(functionName) { mutableListOf() }
+        overloaded.find { it.getTypeSignature() == jvmMethod.getTypeSignature() }?.let {
             messageCollector.add(FunctionIsAlreadyDefinedMessage(functionName, it, null))
             return
         }
-        externals.add(jvmMethod)
+        overloaded.add(jvmMethod)
     }
 
-    fun addSystemLibrary(className: String) {
+    fun addExternalLibrary(className: String) {
         val cr = ClassReader(className)
         val cv = CollectStaticMethodsClassVisitor()
         cr.accept(cv, 0)
         cv.listMethods().forEach {
-            addToExternal(it.name, it)
+            addFunction(it.name, it)
         }
     }
 
@@ -281,7 +281,7 @@ class Context(private val messageCollector: MessageCollector) {
             messageCollector,
             listOf(),
             program.declarations.copy(functions = listOf()),
-            externalFunctions,
+            functions,
             program
         )
         program.declarations.functions.forEach {

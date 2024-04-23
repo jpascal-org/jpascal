@@ -18,7 +18,7 @@ class ResolveTest : BaseFrontendTest() {
     fun resolveWriteln() {
         val messageCollector = MessageCollector()
         val context = Context(messageCollector)
-        context.addSystemLibrary("org.jpascal.stdlib.PreludeKt")
+        context.addExternalLibrary("org.jpascal.stdlib.PreludeKt")
         val parser = createParserFacade()
         val program = parser.parse(
             Source(
