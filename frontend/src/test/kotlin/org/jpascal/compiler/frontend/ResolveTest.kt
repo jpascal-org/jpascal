@@ -351,15 +351,15 @@ class ResolveTest : BaseFrontendTest() {
         resolve(
             "ConditionMustBeBoolean.pas",
             """
-                    var x: integer;
-                    begin
-                        x := 10;
-                        if x then 
-                            x := x + 1
-                        else
-                            x := x - 1;
-                    end.
-                """.trimIndent()
+            var x: integer;
+            begin
+                x := 10;
+                if x then 
+                    x := x + 1
+                else
+                    x := x - 1;
+            end.
+            """.trimIndent()
         ).list().let { list ->
             assertEquals(1, list.size)
             assertTrue(list[0] is ExpectedExpressionTypeMessage)
@@ -370,13 +370,31 @@ class ResolveTest : BaseFrontendTest() {
         resolve(
             "InconsistentExpressionParts.pas",
             """
-                    var x: integer;
-                    begin
-                        x := 10 and true;
-                    end.
-                """.trimIndent()
+            var x: integer;
+            begin
+                x := 10 and true;
+            end.
+            """.trimIndent()
         ).list().let { list ->
             assertEquals(1, list.size)
             assertTrue(list[0] is UnmatchedExpressionPartTypes)
+        }
+
+    @Test
+    fun duplicateFunctions() =
+        resolve(
+            "DuplicateFunctions.pas",
+            """
+            function foo: integer;
+            begin
+                return 1;
+            end;
+            procedure foo;
+            begin
+            end;
+            """.trimIndent()
+        ).list().let { list ->
+            assertEquals(1, list.size)
+            assertTrue(list[0] is FunctionIsAlreadyDefinedMessage)
         }
 }

@@ -50,6 +50,7 @@ class Context(private val messageCollector: MessageCollector) {
 
     private fun addFunction(functionName: String, jvmMethod: JvmMethod) {
         val overloaded = functions.getOrPut(functionName) { mutableListOf() }
+        // TODO: support visibility
         overloaded.find { it.getTypeSignature() == jvmMethod.getTypeSignature() }?.let {
             messageCollector.add(FunctionIsAlreadyDefinedMessage(functionName, it, null))
             return
