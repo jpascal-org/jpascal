@@ -139,8 +139,11 @@ class FunctionGenerator(
         val elseLabel = Label()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, elseLabel)
         generateStatement(statement.thenBranch)
+        val exit = Label()
+        mv.visitJumpInsn(Opcodes.GOTO, exit)
         mv.visitLabel(elseLabel)
         statement.elseBranch?.let(::generateStatement)
+        mv.visitLabel(exit)
     }
 
     private fun generateBooleanExpression(expression: Expression, exit: Label) {
