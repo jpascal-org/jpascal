@@ -5,9 +5,9 @@ import kotlin.test.assertEquals
 
 class ControlFlowTest : BaseBackendTest() {
     @Test
-    fun ifStatement() {
+    fun ifTrueStatement() {
         val method = compile(
-            "IfStatement.pas",
+            "IfTrueStatement.pas",
             """
             function foo(x: integer): integer;
             begin
@@ -20,6 +20,26 @@ class ControlFlowTest : BaseBackendTest() {
         ).getMethod("foo", Int::class.java)
         assertEquals(1, method.invoke(null, 10))
         assertEquals(1, method.invoke(null, 0))
+    }
+
+    @Test
+    fun ifStatement() {
+        val method = compile(
+            "IfStatement.pas",
+            """
+            function foo(x: boolean): integer;
+            var result: integer;
+            begin
+                if x then 
+                    result := 1
+                else
+                    result := 0;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Boolean::class.java)
+        assertEquals(1, method.invoke(null, true))
+        assertEquals(0, method.invoke(null, false))
     }
 
     @Test
