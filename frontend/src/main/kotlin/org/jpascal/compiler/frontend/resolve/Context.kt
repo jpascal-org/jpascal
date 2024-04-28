@@ -113,6 +113,7 @@ class Context(private val messageCollector: MessageCollector) {
             }
 
             is Variable -> resolve(expression, scope)
+            else -> { }
         }
 //        if (expression.type == null) TODO("expr=$expression")
     }
@@ -203,8 +204,24 @@ class Context(private val messageCollector: MessageCollector) {
             is WhileStatement -> resolve(statement, scope)
             is RepeatStatement -> resolve(statement, scope)
             is ForStatement -> resolve(statement, scope)
+            is BreakStatement -> resolveBreak(statement, scope)
             else -> TODO("stmt=$statement")
         }
+    }
+
+    private fun resolveBreak(statement: BreakStatement, scope: Scope) {
+        fun findLoop(statement: Statement, label: Label?): Boolean {
+            if ((statement is WhileStatement ||
+                statement is RepeatStatement ||
+                statement is ForStatement) && label == statement.label) return true
+
+            if (statement.parent != null && statement.parent is Statement)
+                return findLoop(statement.parent as Statement, label)
+
+            return false
+        }
+        if (!findLoop(statement, statement.label))
+            messageCollector.add(BreakIsOutOfLoopMessage(statement.position))
     }
 
     private fun resolve(statement: ForStatement, scope: Scope) {

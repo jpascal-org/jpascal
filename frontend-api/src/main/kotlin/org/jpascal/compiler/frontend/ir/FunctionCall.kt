@@ -3,10 +3,15 @@ package org.jpascal.compiler.frontend.ir
 import org.jpascal.compiler.frontend.resolve.JvmMethod
 import org.jpascal.compiler.frontend.ir.types.Type
 
-data class FunctionCall(
+class FunctionCall(
     val identifier: String,
     val arguments: List<Expression>,
     override val position: SourcePosition? = null,
     var resolved: JvmMethod? = null,
-    override var type: Type? = null,
-) : Expression
+    override var type: Type? = null
+) : Expression {
+    init {
+        arguments.forEach { it.parent = this }
+    }
+    override var parent: PositionedElement? = null
+}

@@ -1,7 +1,13 @@
 package org.jpascal.compiler.frontend.ir
 
-data class CompoundStatement(
+class CompoundStatement(
     val statements: List<Statement>,
     override var label: Label? = null,
     override val position: SourcePosition? = null
-): Statement
+): Statement {
+    init {
+        statements.forEach { it.parent = this }
+    }
+
+    override var parent: PositionedElement? = null
+}

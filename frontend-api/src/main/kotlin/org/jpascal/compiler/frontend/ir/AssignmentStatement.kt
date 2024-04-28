@@ -1,8 +1,15 @@
 package org.jpascal.compiler.frontend.ir
 
-data class AssignmentStatement(
+class AssignmentStatement(
     val variable: Variable,
     val expression: Expression,
     override var label: Label? = null,
     override val position: SourcePosition? = null
-) : Statement
+) : Statement {
+    init {
+        variable.parent = this
+        expression.parent = this
+    }
+
+    override var parent: PositionedElement? = null
+}

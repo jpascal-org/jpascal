@@ -2,6 +2,6 @@ package org.jpascal.compiler.frontend.ir
 
 import org.jpascal.compiler.frontend.ir.types.Type
 
-interface Expression : PositionedElement {
+sealed interface Expression : PositionedElement {
     val type: Type?
 }

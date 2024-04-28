@@ -1,8 +1,15 @@
 package org.jpascal.compiler.frontend.ir
 
-data class RepeatStatement(
+class RepeatStatement(
     val condition: Expression,
     val statement: Statement,
     override var label: Label? = null,
     override val position: SourcePosition?
-) : Statement
+) : Statement {
+    init {
+        condition.parent = this
+        statement.parent = this
+    }
+
+    override var parent: PositionedElement? = null
+}

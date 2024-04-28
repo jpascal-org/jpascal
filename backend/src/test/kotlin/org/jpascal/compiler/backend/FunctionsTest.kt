@@ -358,6 +358,7 @@ class FunctionsTest : BaseBackendTest() {
                 is FunctionCall -> {
                     expression.arguments.forEach { collectVariables(it, acc) }
                 }
+                else -> { }
             }
         }
 
