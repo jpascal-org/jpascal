@@ -13,6 +13,7 @@ abstract class BaseBackendTest {
         val context = ctx ?: Context(messageCollector)
         val parser = createParserFacade()
         val program = parser.parse(Source(filename, code), messageCollector)
+        context.addExternalLibrary("org.jpascal.stdlib.PreludeKt")
         context.add(program)
         context.resolve(program)
         messageCollector.list().forEach {

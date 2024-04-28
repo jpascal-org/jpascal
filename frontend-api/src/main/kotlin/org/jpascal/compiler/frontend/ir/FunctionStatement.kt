@@ -1,7 +1,13 @@
 package org.jpascal.compiler.frontend.ir
 
-data class FunctionStatement(
+class FunctionStatement(
     val functionCall: FunctionCall,
     override var label: Label? = null,
     override val position: SourcePosition?
-) : Statement
+) : Statement {
+    init {
+        functionCall.parent = this
+    }
+
+    override var parent: PositionedElement? = null
+}

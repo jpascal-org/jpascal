@@ -17,6 +17,8 @@ class FunctionGenerator(
     private var maxLocals = function.params.size + function.declarations.variables.size
     private val localVars = mutableMapOf<String, Int>()
 
+    private data class GeneratorContext(val loopStart: Label? = null, val loopExit: Label? = null)
+
     fun generate() {
         addFormalParametersToLocalVars()
         function.declarations.variables.forEach {
@@ -24,7 +26,8 @@ class FunctionGenerator(
             val id = mv.newLocal(AsmType.getType(jvmType))
             localVars[it.name] = id
         }
-        function.compoundStatement.statements.forEach(::generateStatement)
+        val context = GeneratorContext()
+        function.compoundStatement.statements.forEach { generateStatement(it, context) }
         if (function.returnType == UnitType) mv.visitInsn(Opcodes.RETURN)
         mv.visitMaxs(maxStack, maxLocals)
     }
@@ -42,21 +45,26 @@ class FunctionGenerator(
         }
     }
 
-    private fun generateStatement(statement: Statement) {
+    private fun generateStatement(statement: Statement, context: GeneratorContext) {
         when (statement) {
             is AssignmentStatement -> generateAssignment(statement)
             is FunctionStatement -> generateFunctionCall(statement.functionCall)
             is ReturnStatement -> generateReturn(statement)
-            is IfStatement -> generateIf(statement)
-            is WhileStatement -> generateWhile(statement)
-            is RepeatStatement -> generateRepeat(statement)
-            is ForStatement -> generateFor(statement)
-            is CompoundStatement -> statement.statements.forEach(::generateStatement)
+            is IfStatement -> generateIf(statement, context)
+            is WhileStatement -> generateWhile(statement, context)
+            is RepeatStatement -> generateRepeat(statement, context)
+            is ForStatement -> generateFor(statement, context)
+            is CompoundStatement -> statement.statements.forEach { generateStatement(it, context) }
+            is BreakStatement -> generateBreak(statement, context)
             else -> TODO()
         }
     }
 
-    private fun generateFor(statement: ForStatement) {
+    private fun generateBreak(statement: BreakStatement, context: GeneratorContext) {
+        mv.visitJumpInsn(Opcodes.GOTO, context.loopExit)
+    }
+
+    private fun generateFor(statement: ForStatement, context: GeneratorContext) {
         generateAssignment(statement.variable, statement.initialValue)
         val variableType = statement.variable.type!!
         val finalValue = mv.newLocal(AsmType.getType(variableType.toJvmType()))
@@ -67,13 +75,14 @@ class FunctionGenerator(
         loadVariable(statement.variable)
         loadVariable(finalValue, variableType)
         val exit = Label()
+        val newContext = context.copy(loopStart = start, loopExit = exit)
         if (statement.isDecrement) {
             mv.visitJumpInsn(Opcodes.IF_ICMPLT, exit)
-            generateStatement(statement.statement)
+            generateStatement(statement.statement, newContext)
             decrement(statement.variable)
         } else {
             mv.visitJumpInsn(Opcodes.IF_ICMPGT, exit)
-            generateStatement(statement.statement)
+            generateStatement(statement.statement, newContext)
             increment(statement.variable)
         }
         mv.visitJumpInsn(Opcodes.GOTO, start)
@@ -106,18 +115,20 @@ class FunctionGenerator(
         storeVariable(variable)
     }
 
-    private fun generateRepeat(statement: RepeatStatement) {
+    private fun generateRepeat(statement: RepeatStatement, context: GeneratorContext) {
         val start = Label()
+        val exit = Label()
         mv.visitLabel(start)
-        generateStatement(statement.statement)
+        generateStatement(statement.statement, context.copy(loopStart = start, loopExit = exit))
         val label = Label()
         generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, start)
+        mv.visitLabel(exit)
     }
 
-    private fun generateWhile(statement: WhileStatement) {
+    private fun generateWhile(statement: WhileStatement, context: GeneratorContext) {
         val start = Label()
         mv.visitLabel(start)
         val label = Label()
@@ -126,23 +137,23 @@ class FunctionGenerator(
         mv.visitInsn(Opcodes.ICONST_1)
         val exit = Label()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, exit)
-        generateStatement(statement.statement)
+        generateStatement(statement.statement, context.copy(loopStart = start, loopExit = exit))
         mv.visitJumpInsn(Opcodes.GOTO, start)
         mv.visitLabel(exit)
     }
 
-    private fun generateIf(statement: IfStatement) {
+    private fun generateIf(statement: IfStatement, context: GeneratorContext) {
         val label = Label()
         generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
         val elseLabel = Label()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, elseLabel)
-        generateStatement(statement.thenBranch)
+        generateStatement(statement.thenBranch, context)
         val exit = Label()
         mv.visitJumpInsn(Opcodes.GOTO, exit)
         mv.visitLabel(elseLabel)
-        statement.elseBranch?.let(::generateStatement)
+        statement.elseBranch?.let { generateStatement(it, context) }
         mv.visitLabel(exit)
     }
 

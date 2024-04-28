@@ -1,6 +1,7 @@
 package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.frontend.controlflow.messages.MissingReturnStatementMessage
+import org.jpascal.compiler.frontend.resolve.messages.BreakIsOutOfLoopMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -108,5 +109,24 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
                 """.trimIndent()
         ).let {
             assertEquals(0, it.list().size)
+        }
+
+    @Test
+    fun breakIsOutOfLoop() =
+        resolve(
+        "BreakIsOutOfLoop.pas",
+        """
+            function foo(x: integer): integer;
+            begin
+                if true then 
+                    break
+                else
+                    return 0;
+                return 1;
+            end;
+            """.trimIndent()
+        ).let {
+            assertEquals(1, it.list().size)
+            assertTrue(it.list()[0] is BreakIsOutOfLoopMessage)
         }
 }

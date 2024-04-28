@@ -1,8 +1,9 @@
 package org.jpascal.compiler.frontend
 
-import org.jpascal.compiler.frontend.ir.*
-import org.jpascal.compiler.frontend.ir.FunctionDeclaration
-import org.jpascal.compiler.frontend.ir.types.IntegerType
+import org.jpascal.compiler.frontend.ir.Access
+import org.jpascal.compiler.frontend.ir.Position
+import org.jpascal.compiler.frontend.ir.SourcePosition
+import org.jpascal.compiler.frontend.ir.Uses
 import org.jpascal.compiler.frontend.parser.api.Source
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -46,41 +47,7 @@ class ParserTest : BaseFrontendTest() {
             ), messageCollector
         )
         assertNotNull(program.declarations)
-        val func = FunctionDeclaration(
-            identifier = "foo",
-            params = listOf(
-                FormalParameter(name = "x", type = IntegerType, pass = Pass.VALUE,
-                    position = mkPosition(Position(1, 14), Position(1, 15))),
-                FormalParameter(name = "y", type = IntegerType, pass = Pass.VALUE,
-                    position = mkPosition(Position(1, 17), Position(1, 18)))
-            ),
-            returnType = IntegerType,
-            access = Access.PUBLIC,
-            declarations = Declarations(),
-            compoundStatement = CompoundStatement(
-                listOf(
-                    AssignmentStatement(
-                        variable = Variable(
-                            "foo",
-                            position = mkPosition(Position(3, 5), Position(3, 8))
-                        ),
-                        expression = TreeExpression(
-                            op = ArithmeticOperation.PLUS,
-                            left = Variable("x", position = mkPosition(Position(3, 12), Position(3, 13))),
-                            right = Variable("y", position = mkPosition(Position(3, 16), Position(3, 17))),
-                            position = mkPosition(Position(3, 12), Position(3, 17))
-                        ),
-                        position = mkPosition(Position(3, 5), Position(3, 17))
-                    )
-                ),
-                position = mkPosition(Position(2, 1), Position(4, 4))
-            ),
-            position = SourcePosition(
-                "SimpleFunction.pas",
-                start = Position(1, 1), end = Position(4, 4)
-            )
-        )
-        assertEquals(func, program.declarations.functions[0])
+        assertEquals("foo", program.declarations.functions[0].identifier)
     }
 
     @Test

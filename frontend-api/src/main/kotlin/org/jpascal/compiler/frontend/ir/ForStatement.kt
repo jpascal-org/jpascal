@@ -1,6 +1,6 @@
 package org.jpascal.compiler.frontend.ir
 
-data class ForStatement(
+class ForStatement(
     val variable: Variable,
     val initialValue: Expression,
     val finalValue: Expression,
@@ -8,4 +8,14 @@ data class ForStatement(
     val statement: Statement,
     override var label: Label? = null,
     override val position: SourcePosition?
-) : Statement
+) : Statement {
+    init {
+        variable.parent = this
+        statement.parent = this
+        initialValue.parent = this
+        finalValue.parent = this
+        statement.parent = this
+    }
+
+    override var parent: PositionedElement? = null
+}

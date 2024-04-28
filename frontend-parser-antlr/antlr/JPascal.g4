@@ -97,7 +97,7 @@ labelDeclarationPart
     ;
 
 label
-    : unsignedInteger
+    : IDENT
     ;
 
 constantDefinitionPart
@@ -335,8 +335,13 @@ simpleStatement
     : assignmentStatement
     | procedureStatement
     | gotoStatement
+    | breakStatement
     | returnStatement
     | emptyStatement_
+    ;
+
+breakStatement
+    : BREAK label?
     ;
 
 returnStatement
@@ -534,6 +539,10 @@ finalValue
 //recordVariableList
 //    : variable (COMMA variable)*
 //    ;
+
+BREAK
+    : 'break'
+    ;
 
 RETURN
     : 'return'

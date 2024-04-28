@@ -12,7 +12,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
 
     fun getProgram() = program
 
-    override fun visitProgram(ctx: JPascalParser.ProgramContext): Any? {
+    override fun visitProgram(ctx: JPascalParser.ProgramContext): Program? {
         val declarations = visitProgramBlock(ctx.programBlock())
         val compoundStatement = ctx.programBlock().compoundStatement()?.let {
             visitCompoundStatement(it)
@@ -179,6 +179,10 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             val expression = visitExpression(it.expression())
             val variable = visitSelector(it.selector())
             return AssignmentStatement(variable, expression, null, mkPosition(ctx.position))
+        }
+        ctx.breakStatement()?.let {
+            val jumpTo = it.label()?.let { l -> Label(l.text) }
+            return BreakStatement(jumpTo, position = mkPosition(ctx.position))
         }
         ctx.emptyStatement_()?.let { return null }
         ctx.procedureStatement()?.let {
