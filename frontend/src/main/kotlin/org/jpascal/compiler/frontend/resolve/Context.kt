@@ -220,7 +220,7 @@ class Context(private val messageCollector: MessageCollector) {
 
             return false
         }
-        if (!findLoop(statement, statement.label))
+        if (!findLoop(statement, statement.jumpFrom))
             messageCollector.add(BreakIsOutOfLoopMessage(statement.position))
     }
 
