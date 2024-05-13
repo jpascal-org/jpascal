@@ -330,4 +330,96 @@ class ControlFlowTest : BaseBackendTest() {
             assertEquals(3, it.invoke(null, 2))
             assertEquals(6, it.invoke(null, 3))
         }
+
+
+    @Test
+    fun whileLoopWithLabelAndBreak() =
+        compile(
+            "WhileLoopWithLabelAndBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                start: while i <= n + 5 do 
+                begin
+                    if i > n then break start;
+                    result := result + i;
+                    i := i + 1;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun nestedWhileWithBreak() =
+        compile(
+            "NestedLoopWithBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, j, result: integer;
+            begin
+                j := 1;
+                result := 0;
+                while j <= 2 do
+                begin
+                    i := 1;
+                    while i <= n + 5 do 
+                    begin
+                        if i > n then break;
+                        result := result + i;
+                        i := i + 1;
+                    end;
+                    j := j + 1;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(2, it.invoke(null, 1))
+            assertEquals(6, it.invoke(null, 2))
+            assertEquals(12, it.invoke(null, 3))
+        }
+
+    @Test
+    fun nestedWhileWithOuterBreak() =
+        compile(
+            "NestedLoopWithOuterBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, j, result: integer;
+            begin
+                j := 1;
+                result := 0;
+                outer: while j <= 4 do
+                begin
+                    i := 1;
+                    while i <= n + 5 do 
+                    begin
+                        if i > n then break outer;
+                        result := result + i;
+                        i := i + 1;
+                    end;
+                    j := j + 1;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
 }

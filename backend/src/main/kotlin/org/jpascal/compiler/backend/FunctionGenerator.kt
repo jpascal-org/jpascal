@@ -3,8 +3,8 @@ package org.jpascal.compiler.backend
 import org.jpascal.compiler.frontend.ir.toJvmType
 import org.jpascal.compiler.frontend.ir.*
 import org.jpascal.compiler.frontend.ir.types.*
-import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Label as AsmLabel
 import org.objectweb.asm.Type as AsmType
 import org.objectweb.asm.commons.LocalVariablesSorter
 
@@ -16,8 +16,9 @@ class FunctionGenerator(
     private var maxStack = 0
     private var maxLocals = function.params.size + function.declarations.variables.size
     private val localVars = mutableMapOf<String, Int>()
+    private val loops = mutableMapOf<Label, GeneratorContext>()
 
-    private data class GeneratorContext(val loopStart: Label? = null, val loopExit: Label? = null)
+    private data class GeneratorContext(val loopStart: AsmLabel? = null, val loopExit: AsmLabel? = null)
 
     fun generate() {
         addFormalParametersToLocalVars()
@@ -61,7 +62,8 @@ class FunctionGenerator(
     }
 
     private fun generateBreak(statement: BreakStatement, context: GeneratorContext) {
-        mv.visitJumpInsn(Opcodes.GOTO, context.loopExit)
+        val jump = statement.jumpFrom?.let { loops[it]!!.loopExit } ?: context.loopExit
+        mv.visitJumpInsn(Opcodes.GOTO, jump)
     }
 
     private fun generateFor(statement: ForStatement, context: GeneratorContext) {
@@ -70,12 +72,13 @@ class FunctionGenerator(
         val finalValue = mv.newLocal(AsmType.getType(variableType.toJvmType()))
         generateExpression(statement.finalValue)
         storeVariable(finalValue, variableType)
-        val start = Label()
+        val start = AsmLabel()
+        val exit = AsmLabel()
+        val newContext = context.copy(loopStart = start, loopExit = exit)
         mv.visitLabel(start)
         loadVariable(statement.variable)
         loadVariable(finalValue, variableType)
-        val exit = Label()
-        val newContext = context.copy(loopStart = start, loopExit = exit)
+        statement.label?.let { loops[it] = newContext }
         if (statement.isDecrement) {
             mv.visitJumpInsn(Opcodes.IF_ICMPLT, exit)
             generateStatement(statement.statement, newContext)
@@ -116,11 +119,13 @@ class FunctionGenerator(
     }
 
     private fun generateRepeat(statement: RepeatStatement, context: GeneratorContext) {
-        val start = Label()
-        val exit = Label()
+        val start = AsmLabel()
+        val exit = AsmLabel()
+        val newContext = context.copy(loopStart = start, loopExit = exit)
+        statement.label?.let { loops[it] = newContext }
         mv.visitLabel(start)
-        generateStatement(statement.statement, context.copy(loopStart = start, loopExit = exit))
-        val label = Label()
+        generateStatement(statement.statement, newContext)
+        val label = AsmLabel()
         generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
@@ -129,36 +134,38 @@ class FunctionGenerator(
     }
 
     private fun generateWhile(statement: WhileStatement, context: GeneratorContext) {
-        val start = Label()
+        val start = AsmLabel()
+        val exit = AsmLabel()
+        val newContext = context.copy(loopStart = start, loopExit = exit)
+        statement.label?.let { loops[it] = newContext }
         mv.visitLabel(start)
-        val label = Label()
+        val label = AsmLabel()
         generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
-        val exit = Label()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, exit)
-        generateStatement(statement.statement, context.copy(loopStart = start, loopExit = exit))
+        generateStatement(statement.statement, newContext)
         mv.visitJumpInsn(Opcodes.GOTO, start)
         mv.visitLabel(exit)
     }
 
     private fun generateIf(statement: IfStatement, context: GeneratorContext) {
-        val label = Label()
+        val label = AsmLabel()
         generateBooleanExpression(statement.condition, label)
         mv.visitLabel(label)
         mv.visitInsn(Opcodes.ICONST_1)
-        val elseLabel = Label()
+        val elseLabel = AsmLabel()
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, elseLabel)
         generateStatement(statement.thenBranch, context)
-        val exit = Label()
+        val exit = AsmLabel()
         mv.visitJumpInsn(Opcodes.GOTO, exit)
         mv.visitLabel(elseLabel)
         statement.elseBranch?.let { generateStatement(it, context) }
         mv.visitLabel(exit)
     }
 
-    private fun generateBooleanExpression(expression: Expression, exit: Label) {
-        fun generateWithExit(expression: Expression, exit: Label) {
+    private fun generateBooleanExpression(expression: Expression, exit: AsmLabel) {
+        fun generateWithExit(expression: Expression, exit: AsmLabel) {
             if (expression.type == BooleanType) {
                 generateBooleanExpression(expression, exit)
             } else {
@@ -167,13 +174,13 @@ class FunctionGenerator(
         }
 
         fun generateBooleanOp(left: Expression, right: Expression, inverseOp: Int) {
-            val label1 = Label()
+            val label1 = AsmLabel()
             generateWithExit(left, label1)
             mv.visitLabel(label1)
-            val label2 = Label()
+            val label2 = AsmLabel()
             generateWithExit(right, label2)
             mv.visitLabel(label2)
-            val jumpIfFalse = Label()
+            val jumpIfFalse = AsmLabel()
             mv.visitJumpInsn(inverseOp, jumpIfFalse)
             mv.visitInsn(Opcodes.ICONST_1)
             mv.visitJumpInsn(Opcodes.GOTO, exit)
@@ -194,11 +201,11 @@ class FunctionGenerator(
                 val (op, left, right) = expression
                 when (op) {
                     LogicalOperation.AND -> {
-                        val label = Label()
+                        val label = AsmLabel()
                         generateBooleanExpression(left, label) // true or false on stack
                         mv.visitLabel(label)
                         mv.visitInsn(Opcodes.ICONST_0)
-                        val next = Label()
+                        val next = AsmLabel()
                         mv.visitJumpInsn(Opcodes.IF_ICMPNE, next) // if true then check the right part
                         mv.visitInsn(Opcodes.ICONST_0)
                         mv.visitJumpInsn(Opcodes.GOTO, exit)
@@ -207,11 +214,11 @@ class FunctionGenerator(
                     }
 
                     LogicalOperation.OR -> {
-                        val label = Label()
+                        val label = AsmLabel()
                         generateBooleanExpression(left, label)
                         mv.visitLabel(label)
                         mv.visitInsn(Opcodes.ICONST_0)
-                        val next = Label()
+                        val next = AsmLabel()
                         mv.visitJumpInsn(Opcodes.IF_ICMPEQ, next)
                         mv.visitInsn(Opcodes.ICONST_1)
                         mv.visitJumpInsn(Opcodes.GOTO, exit)
@@ -220,10 +227,10 @@ class FunctionGenerator(
                     }
 
                     LogicalOperation.XOR -> {
-                        val label1 = Label()
+                        val label1 = AsmLabel()
                         generateBooleanExpression(left, label1)
                         mv.visitLabel(label1)
-                        val label2 = Label()
+                        val label2 = AsmLabel()
                         generateBooleanExpression(right, label2)
                         mv.visitLabel(label2)
                         mv.visitInsn(Opcodes.IADD)
@@ -244,7 +251,7 @@ class FunctionGenerator(
             is UnaryExpression -> {
                 // NOT
                 mv.visitInsn(Opcodes.ICONST_1)
-                val label = Label()
+                val label = AsmLabel()
                 generateBooleanExpression(expression.expression, label)
                 mv.visitLabel(label)
                 mv.visitInsn(Opcodes.ISUB)
@@ -365,7 +372,7 @@ class FunctionGenerator(
                 ArithmeticOperation.MINUS -> generateArithmetics(expression, Opcodes.ISUB, Opcodes.DSUB)
                 ArithmeticOperation.TIMES -> generateArithmetics(expression, Opcodes.IMUL, Opcodes.DMUL)
                 is RelationalOperation -> {
-                    val label = Label()
+                    val label = AsmLabel()
                     generateBooleanExpression(expression, label)
                     mv.visitLabel(label)
                 }
@@ -374,7 +381,7 @@ class FunctionGenerator(
             }
 
             is BooleanLiteral -> {
-                val label = Label()
+                val label = AsmLabel()
                 generateBooleanExpression(expression, label)
                 mv.visitLabel(label)
             }

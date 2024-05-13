@@ -2,6 +2,7 @@ package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.frontend.controlflow.messages.MissingReturnStatementMessage
 import org.jpascal.compiler.frontend.resolve.messages.BreakIsOutOfLoopMessage
+import org.jpascal.compiler.frontend.resolve.messages.DuplicateLabelMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -128,5 +129,45 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
         ).let {
             assertEquals(1, it.list().size)
             assertTrue(it.list()[0] is BreakIsOutOfLoopMessage)
+        }
+
+    @Test
+    fun whileLoopWithWrongLabel() =
+        resolve(
+            "WhileLoopWithWrongLabel.pas",
+            """
+            function foo: integer;
+            begin
+                s1: while true do 
+                begin
+                    if true then break s;
+                end;
+                return 1;
+            end;
+            """.trimIndent()
+        ).let {
+            assertEquals(1, it.list().size)
+            assertTrue(it.list()[0] is BreakIsOutOfLoopMessage)
+            val message = it.list()[0] as BreakIsOutOfLoopMessage
+            assertEquals("s", message.label?.name)
+        }
+
+    @Test
+    fun duplicateLabel() =
+        resolve(
+            "DuplicateLabel.pas",
+            """
+            function foo(n: integer): integer;
+            begin
+                l: if n = 0 then return 0;
+                l: if n = 1 then return 1;
+                return 2;
+            end;
+            """.trimIndent()
+        ).let {
+            assertEquals(1, it.list().size)
+            assertTrue(it.list()[0] is DuplicateLabelMessage)
+            val message = it.list()[0] as DuplicateLabelMessage
+            assertEquals("l", message.label.name)
         }
 }

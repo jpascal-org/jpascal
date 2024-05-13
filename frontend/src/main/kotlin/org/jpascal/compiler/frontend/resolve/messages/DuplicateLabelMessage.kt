@@ -5,8 +5,8 @@ import org.jpascal.compiler.frontend.MessageLevel
 import org.jpascal.compiler.frontend.ir.Label
 import org.jpascal.compiler.frontend.ir.SourcePosition
 
-data class BreakIsOutOfLoopMessage(
-    val label: Label?,
+data class DuplicateLabelMessage(
+    val label: Label,
     override val position: SourcePosition?
 ) : Message {
     override val level: MessageLevel = MessageLevel.ERROR

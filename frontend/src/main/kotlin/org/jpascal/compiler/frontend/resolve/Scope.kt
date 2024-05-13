@@ -15,6 +15,7 @@ class Scope(
 ) {
     private val variables = mutableMapOf<String, TypedDeclaration>()
     private val functions = mutableMapOf<String, MutableList<JvmMethod>>()
+    private val labels = mutableSetOf<String>()
     val packageName: String? = if (element is Program) element.packageName else parent?.packageName
     val returnType = if (element is FunctionDeclaration) element.returnType else UnitType
 
@@ -49,6 +50,12 @@ class Scope(
             functionDeclaration,
             parent = this
         )
+    }
+
+    fun checkLabel(label: Label): Boolean {
+        if (labels.contains(label.name)) return false
+        labels.add(label.name)
+        return true
     }
 
     fun findVariableDeclarationScope(name: String): Scope?  =

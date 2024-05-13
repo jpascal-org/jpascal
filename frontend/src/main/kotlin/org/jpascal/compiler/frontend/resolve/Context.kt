@@ -195,6 +195,9 @@ class Context(private val messageCollector: MessageCollector) {
     }
 
     private fun resolve(statement: Statement, scope: Scope) {
+        statement.label?.let {
+            if (!scope.checkLabel(it)) messageCollector.add(DuplicateLabelMessage(it, statement.position))
+        }
         when (statement) {
             is FunctionStatement -> resolve(statement.functionCall, scope)
             is AssignmentStatement -> resolve(statement, scope)
@@ -221,7 +224,7 @@ class Context(private val messageCollector: MessageCollector) {
             return false
         }
         if (!findLoop(statement, statement.jumpFrom))
-            messageCollector.add(BreakIsOutOfLoopMessage(statement.position))
+            messageCollector.add(BreakIsOutOfLoopMessage(statement.jumpFrom, statement.position))
     }
 
     private fun resolve(statement: ForStatement, scope: Scope) {
