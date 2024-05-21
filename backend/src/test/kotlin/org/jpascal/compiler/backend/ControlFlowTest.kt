@@ -422,4 +422,107 @@ class ControlFlowTest : BaseBackendTest() {
             assertEquals(3, it.invoke(null, 2))
             assertEquals(6, it.invoke(null, 3))
         }
+
+    @Test
+    fun forLoopWithBreak() =
+        compile(
+            "ForLoopWithBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                result := 0;
+                for i := 1 to n + 5 do 
+                begin
+                    if i > n then break;
+                    result := result + i;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun forLoopWithLabelAndBreak() =
+        compile(
+            "ForLoopWithLabelAndBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                start: for i := 1 to n + 5 do 
+                begin
+                    if i > n then break start;
+                    result := result + i;
+                end;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun repeatLoopWithBreak() =
+        compile(
+            "RepeatLoopWithBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                repeat
+                    if i > n then break;
+                    result := result + i;
+                    i := i + 1;
+                until i > n + 5;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
+
+    @Test
+    fun repeatLoopWithLabelAndBreak() =
+        compile(
+            "RepeatLoopWithLabelAndBreak.pas",
+            """
+            function foo(n: integer): integer;
+            var
+                i, result: integer;
+            begin
+                i := 1;
+                result := 0;
+                start: repeat
+                    if i > n then break start;
+                    result := result + i;
+                    i := i + 1;
+                until i > n + 5;
+                return result;
+            end;
+            """.trimIndent()
+        ).getMethod("foo", Int::class.java).let {
+            assertEquals(0, it.invoke(null, 0))
+            assertEquals(1, it.invoke(null, 1))
+            assertEquals(3, it.invoke(null, 2))
+            assertEquals(6, it.invoke(null, 3))
+        }
 }

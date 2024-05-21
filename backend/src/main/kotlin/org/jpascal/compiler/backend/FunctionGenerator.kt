@@ -62,7 +62,7 @@ class FunctionGenerator(
     }
 
     private fun generateBreak(statement: BreakStatement, context: GeneratorContext) {
-        val jump = statement.jumpFrom?.let { loops[it]!!.loopExit } ?: context.loopExit
+        val jump = statement.jump?.let { loops[it]!!.loopExit } ?: context.loopExit
         mv.visitJumpInsn(Opcodes.GOTO, jump)
     }
 

@@ -223,8 +223,13 @@ class Context(private val messageCollector: MessageCollector) {
 
             return false
         }
-        if (!findLoop(statement, statement.jumpFrom))
-            messageCollector.add(BreakIsOutOfLoopMessage(statement.jumpFrom, statement.position))
+        if (!findLoop(statement, statement.jump)) {
+            if (statement.jump == null) {
+                messageCollector.add(BreakIsOutsideOfLoopMessage(statement.position))
+            } else {
+                messageCollector.add(WrongLabelToJumpMessage(statement, statement.position))
+            }
+        }
     }
 
     private fun resolve(statement: ForStatement, scope: Scope) {

@@ -1,8 +1,9 @@
 package org.jpascal.compiler.frontend
 
 import org.jpascal.compiler.frontend.controlflow.messages.MissingReturnStatementMessage
-import org.jpascal.compiler.frontend.resolve.messages.BreakIsOutOfLoopMessage
+import org.jpascal.compiler.frontend.resolve.messages.BreakIsOutsideOfLoopMessage
 import org.jpascal.compiler.frontend.resolve.messages.DuplicateLabelMessage
+import org.jpascal.compiler.frontend.resolve.messages.WrongLabelToJumpMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -128,7 +129,7 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
             """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
-            assertTrue(it.list()[0] is BreakIsOutOfLoopMessage)
+            assertTrue(it.list()[0] is BreakIsOutsideOfLoopMessage)
         }
 
     @Test
@@ -147,9 +148,9 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
             """.trimIndent()
         ).let {
             assertEquals(1, it.list().size)
-            assertTrue(it.list()[0] is BreakIsOutOfLoopMessage)
-            val message = it.list()[0] as BreakIsOutOfLoopMessage
-            assertEquals("s", message.label?.name)
+            assertTrue(it.list()[0] is WrongLabelToJumpMessage)
+            val message = it.list()[0] as WrongLabelToJumpMessage
+            assertEquals("s", message.statement.jump?.name)
         }
 
     @Test
@@ -169,5 +170,27 @@ class ControlFlowAnalysisTest : BaseFrontendTest() {
             assertTrue(it.list()[0] is DuplicateLabelMessage)
             val message = it.list()[0] as DuplicateLabelMessage
             assertEquals("l", message.label.name)
+        }
+
+    @Test
+    fun breakToWrongLabel() =
+        resolve(
+            "BreakWrongLabel.pas",
+            """
+            function foo: integer;
+            begin
+                s: if true then return 0;
+                while true do 
+                begin
+                    if true then break s;
+                end;
+                return 1;
+            end;
+            """.trimIndent()
+        ).let {
+            assertEquals(1, it.list().size)
+            assertTrue(it.list()[0] is WrongLabelToJumpMessage)
+            val message = it.list()[0] as WrongLabelToJumpMessage
+            assertEquals("s", message.statement.jump?.name)
         }
 }
