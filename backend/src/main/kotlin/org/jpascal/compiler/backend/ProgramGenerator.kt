@@ -20,7 +20,7 @@ class ProgramGenerator(private val program: Program) {
             Opcodes.ACC_PUBLIC,
             className,
             null,
-            Type.getInternalName(Object::class.java),
+            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") Type.getInternalName(Object::class.java),
             null
         )
         program.declarations.variables.forEach(::generateGlobalVariable)

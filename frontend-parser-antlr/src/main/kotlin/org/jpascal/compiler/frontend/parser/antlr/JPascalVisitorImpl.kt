@@ -62,7 +62,42 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         ctx.simpleType()?.let {
             return visitSimpleType(it)
         }
+        ctx.structuredType()?.let {
+            return visitStructuredType(it)
+        }
         TODO()
+    }
+
+    override fun visitStructuredType(ctx: JPascalParser.StructuredTypeContext): Type {
+        ctx.arrayType()?.let {
+            return visitArrayType(it)
+        }
+        TODO()
+    }
+
+    override fun visitArrayType(ctx: JPascalParser.ArrayTypeContext): Type {
+        val indexTypes = ctx.typeList().indexType().map {
+            it.simpleType().subrangeType()?.let { c ->
+                visitSubrangeType(c)
+            } ?: TODO()
+        }
+        return ArrayType(indexTypes, visitType_(ctx.componentType().type_()))
+    }
+
+    override fun visitSubrangeType(ctx: JPascalParser.SubrangeTypeContext): OrderedType {
+        val (min: Any, max: Any) = ctx.constant().map {
+            val sign = it.sign()?.let {
+                when (it.text) {
+                    "-" -> -1
+                    else -> 1
+                }
+            } ?: 1
+            (it.unsignedNumber()?.let { c ->
+                sign * Integer.parseInt(c.text)
+            } ?: it.identifier()?.text
+            ?: it.constantChr()!!.text[0])
+        }
+        return RawRangeType(min, max)
     }
 
     override fun visitSimpleType(ctx: JPascalParser.SimpleTypeContext): Type {
@@ -177,7 +212,7 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     override fun visitSimpleStatement(ctx: JPascalParser.SimpleStatementContext): Statement? {
         ctx.assignmentStatement()?.let {
             val expression = visitExpression(it.expression())
-            val variable = visitSelector(it.selector())
+            val variable = visitLvalue(it.lvalue())
             return AssignmentStatement(variable, expression, null, mkPosition(ctx.position))
         }
         ctx.breakStatement()?.let {
@@ -254,8 +289,13 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
         return FunctionCall(ctx.identifier().text, args, mkPosition(ctx.position))
     }
 
-    override fun visitSelector(ctx: JPascalParser.SelectorContext): Variable {
-        if (ctx.LBRACK() != null) TODO()
+    override fun visitLvalue(ctx: JPascalParser.LvalueContext): Lvalue {
+        if (ctx.LBRACK() != null) {
+            val indices = ctx.expression().map {
+                visitExpression(it)
+            }
+            return ArrayElement(ctx.identifier().text, indices, mkPosition(ctx.position))
+        }
         if (ctx.DOT() != null) TODO()
         return Variable(ctx.identifier().text, mkPosition(ctx.position))
     }
@@ -323,8 +363,8 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
     }
 
     override fun visitFactor(ctx: JPascalParser.FactorContext): Expression {
-        ctx.selector()?.let {
-            return visitSelector(it)
+        ctx.lvalue()?.let {
+            return visitLvalue(it)
         }
         ctx.unsignedConstant()?.let {
             return visitUnsignedConstant(it)
@@ -359,5 +399,9 @@ class JPascalVisitorImpl(private val filename: String) : JPascalBaseVisitor<Any?
             return RealNumber(it.text.toDouble(), mkPosition(ctx.position))
         }
         TODO()
+    }
+
+    override fun defaultResult(): Any? {
+        TODO("Not yet implemented")
     }
 }

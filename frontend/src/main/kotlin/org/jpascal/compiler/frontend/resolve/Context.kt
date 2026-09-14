@@ -208,7 +208,6 @@ class Context(private val messageCollector: MessageCollector) {
             is RepeatStatement -> resolve(statement, scope)
             is ForStatement -> resolve(statement, scope)
             is BreakStatement -> resolveBreak(statement, scope)
-            else -> TODO("stmt=$statement")
         }
     }
 
@@ -283,16 +282,16 @@ class Context(private val messageCollector: MessageCollector) {
     }
 
     private fun resolve(assignmentStatement: AssignmentStatement, scope: Scope) {
-        resolve(assignmentStatement.variable, scope)
+        resolve(assignmentStatement.LValue, scope)
         resolve(assignmentStatement.expression, scope)
-        assertIsAssignableFrom(assignmentStatement.variable, assignmentStatement.expression)
+        assertIsAssignableFrom(assignmentStatement.LValue, assignmentStatement.expression)
     }
 
-    private fun assertIsAssignableFrom(variable: Variable, expression: Expression) {
+    private fun assertIsAssignableFrom(LValue: Lvalue, expression: Expression) {
         expression.type?.let { expressionType ->
-            variable.type?.let { variableType ->
-                if (!variableType.isAssignableFrom(expressionType)) {
-                    messageCollector.add(VariableTypeIsNotAssignableMessage(variable, expression))
+            LValue.type?.let { selectorType ->
+                if (!selectorType.isAssignableFrom(expressionType)) {
+                    messageCollector.add(LvalueTypeIsNotAssignableMessage(LValue, expression))
                 }
             }
         }

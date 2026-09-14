@@ -144,9 +144,9 @@ class ResolveTest : BaseFrontendTest() {
         context.resolve(program)
         messageCollector.list().let { messages ->
             assertEquals(1, messages.size)
-            assertTrue(messages[0] is VariableTypeIsNotAssignableMessage)
-            val message = (messages[0] as VariableTypeIsNotAssignableMessage)
-            assertEquals(IntegerType, message.variable.type!!)
+            assertTrue(messages[0] is LvalueTypeIsNotAssignableMessage)
+            val message = (messages[0] as LvalueTypeIsNotAssignableMessage)
+            assertEquals(IntegerType, message.lvalue.type!!)
             assertEquals(StringType, message.expression.type!!)
         }
     }

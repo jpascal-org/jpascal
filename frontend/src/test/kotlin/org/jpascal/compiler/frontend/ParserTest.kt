@@ -1,13 +1,10 @@
 package org.jpascal.compiler.frontend
 
-import org.jpascal.compiler.frontend.ir.Access
-import org.jpascal.compiler.frontend.ir.Position
-import org.jpascal.compiler.frontend.ir.SourcePosition
-import org.jpascal.compiler.frontend.ir.Uses
+import org.jpascal.compiler.frontend.ir.*
+import org.jpascal.compiler.frontend.ir.types.ArrayType
+import org.jpascal.compiler.frontend.ir.types.RawRangeType
 import org.jpascal.compiler.frontend.parser.api.Source
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.*
 
 class ParserTest : BaseFrontendTest() {
     @Test
@@ -30,9 +27,6 @@ class ParserTest : BaseFrontendTest() {
 
     @Test
     fun simpleFunction() {
-        fun mkPosition(start: Position, end: Position): SourcePosition =
-            SourcePosition("SimpleFunction.pas", start, end)
-
         val messageCollector = MessageCollector()
         val parser = createParserFacade()
         val program = parser.parse(
@@ -99,5 +93,88 @@ class ParserTest : BaseFrontendTest() {
         )
         assertEquals(Access.PRIVATE, program.declarations.functions[0].access)
         assertEquals(Access.PROTECTED, program.declarations.functions[1].access)
+    }
+
+    @Test
+    fun `one-dimensional array with range`() {
+        val messageCollector = MessageCollector()
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "ArrayWithRange.pas",
+                """
+                private function foo(x, y: integer): integer;
+                var
+                    a: array[0..10] of integer;
+                begin
+                    a[0] := x + y;
+                    return a[0];
+                end;
+                """.trimIndent()
+            ), messageCollector
+        )
+        val arrayType = program.declarations.functions[0].declarations.variables[0].type
+        assertTrue(arrayType is ArrayType)
+        assertEquals(1, arrayType.indexTypes.size)
+        val rangeType = arrayType.indexTypes[0]
+        assertTrue(rangeType is RawRangeType)
+        assertEquals(0, rangeType.min)
+        assertEquals(10, rangeType.max)
+        val statement = program.declarations.functions[0].compoundStatement.statements[0]
+        assertTrue(statement is AssignmentStatement)
+        val lhs = statement.LValue
+        assertTrue(lhs is ArrayElement)
+        assertEquals("a", lhs.name)
+        assertEquals(1, lhs.indices.size)
+        assertTrue(lhs.indices[0] is IntegerNumber)
+        assertEquals(0, (lhs.indices[0] as IntegerNumber).value)
+    }
+
+    @Test
+    fun `two-dimensional array with range`() {
+        val messageCollector = MessageCollector()
+        val parser = createParserFacade()
+        val program = parser.parse(
+            Source(
+                "ArrayWithRange.pas",
+                """
+                private function foo(x, y: integer): integer;
+                var
+                    a: array[0..10, -1..1] of integer;
+                begin
+                    a[0, -1] := x + y;
+                    return a[0, -1];
+                end;
+                """.trimIndent()
+            ), messageCollector
+        )
+        val arrayType = program.declarations.functions[0].declarations.variables[0].type
+        assertTrue(arrayType is ArrayType)
+        assertEquals(2, arrayType.indexTypes.size)
+        arrayType.indexTypes[0].let { rangeType ->
+            assertTrue(rangeType is RawRangeType)
+            assertEquals(0, rangeType.min)
+            assertEquals(10, rangeType.max)
+        }
+        arrayType.indexTypes[1].let { rangeType ->
+            assertTrue(rangeType is RawRangeType)
+            assertEquals(-1, rangeType.min)
+            assertEquals(1, rangeType.max)
+        }
+        val statement = program.declarations.functions[0].compoundStatement.statements[0]
+        assertTrue(statement is AssignmentStatement)
+        val lhs = statement.LValue
+        assertTrue(lhs is ArrayElement)
+        assertEquals("a", lhs.name)
+        assertEquals(2, lhs.indices.size)
+        assertTrue(lhs.indices[0] is IntegerNumber)
+        assertTrue(lhs.indices[1] is UnaryExpression)
+        assertEquals(0, (lhs.indices[0] as IntegerNumber).value)
+        assertTrue(lhs.indices[1] is UnaryExpression)
+        (lhs.indices[1] as UnaryExpression).let { expression ->
+            assertEquals(ArithmeticOperation.UNARY_MINUS, expression.op)
+            assertTrue(expression.expression is IntegerNumber)
+            assertEquals(1, (expression.expression as IntegerNumber).value)
+        }
     }
 }

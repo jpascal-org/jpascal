@@ -1,12 +1,9 @@
 import com.strumenta.antlrkotlin.gradle.AntlrKotlinTask
-import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
-
-val kotlinVersion: String by project
-val antlrKotlinVersion: String by project
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
-    kotlin("jvm") version "1.9.22"
-    id("com.strumenta.antlr-kotlin") version "1.0.0-RC2"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.antlr.kotlin)
 }
 
 group = "org.jpascal"
@@ -18,8 +15,8 @@ repositories {
 
 dependencies {
     implementation(project(":frontend-api"))
-    implementation("com.strumenta:antlr-kotlin-runtime:$antlrKotlinVersion")
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    implementation(libs.antlr.kotlin.runtime)
+    testImplementation(libs.kotlin.test)
 }
 
 tasks.test {
@@ -27,7 +24,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 sourceSets.main {
@@ -57,6 +54,6 @@ val generateKotlinGrammarSource = tasks.register<AntlrKotlinTask>("generateKotli
     outputDirectory = layout.buildDirectory.dir(outDir).get().asFile
 }
 
-tasks.withType<KotlinCompile<*>> {
+tasks.withType<KotlinCompilationTask<*>> {
     dependsOn(generateKotlinGrammarSource)
 }
