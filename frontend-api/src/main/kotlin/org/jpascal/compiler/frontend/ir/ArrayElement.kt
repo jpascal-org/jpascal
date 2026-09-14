@@ -1,13 +1,12 @@
 package org.jpascal.compiler.frontend.ir
 
 import org.jpascal.compiler.frontend.ir.types.Type
-import org.jpascal.compiler.frontend.resolve.JvmField
 
-class Variable(
+class ArrayElement(
     val name: String,
+    val indices: List<Expression>,
     override val position: SourcePosition? = null,
     override var type: Type? = null,
-    var jvmField: JvmField? = null
-) : Lvalue {
+) : Expression, Lvalue {
     override var parent: PositionedElement? = null
 }

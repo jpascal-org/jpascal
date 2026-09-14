@@ -57,7 +57,6 @@ class FunctionGenerator(
             is ForStatement -> generateFor(statement, context)
             is CompoundStatement -> statement.statements.forEach { generateStatement(it, context) }
             is BreakStatement -> generateBreak(statement, context)
-            else -> TODO()
         }
     }
 
@@ -262,11 +261,14 @@ class FunctionGenerator(
     }
 
     private fun generateAssignment(statement: AssignmentStatement) =
-        generateAssignment(statement.variable, statement.expression)
+        generateAssignment(statement.LValue, statement.expression)
 
-    private fun generateAssignment(variable: Variable, expression: Expression) {
+    private fun generateAssignment(variable: Lvalue, expression: Expression) {
         generateExpression(expression)
-        storeVariable(variable)
+        when (variable) {
+            is Variable -> storeVariable(variable)
+            else -> TODO()
+        }
     }
 
     private fun storeVariable(variable: Variable) {

@@ -190,11 +190,6 @@ typeIdentifier
     ;
 
 structuredType
-    : PACKED unpackedStructuredType
-    | unpackedStructuredType
-    ;
-
-unpackedStructuredType
     : arrayType
     | recordType
     | setType
@@ -207,7 +202,6 @@ stringtype
 
 arrayType
     : ARRAY LBRACK typeList RBRACK OF componentType
-    | ARRAY LBRACK2 typeList RBRACK2 OF componentType
     ;
 
 typeList
@@ -349,7 +343,7 @@ returnStatement
     ;
 
 assignmentStatement
-    : selector ASSIGN expression
+    : lvalue ASSIGN expression
     ;
 
 //variable
@@ -360,8 +354,8 @@ assignmentStatement
 //    )*
 //    ;
 
-selector
-    : identifier (LBRACK expression (COMMA expression)* RBRACK)? (DOT selector)?
+lvalue
+    : identifier (LBRACK expression (COMMA expression)* RBRACK)? (DOT lvalue)?
     ;
 
 expression
@@ -407,7 +401,7 @@ signedFactor
 
 factor
 //    : variable
-    : selector
+    : lvalue
     | LPAREN expression RPAREN
     | functionDesignator
     | unsignedConstant

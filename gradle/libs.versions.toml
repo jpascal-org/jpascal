@@ -1,0 +1,19 @@
+[versions]
+kotlin = "2.4.10"
+antlr-kotlin="1.0.13"
+asm="9.10.1"
+clikt = "4.4.0"
+shadow = "9.6.1"
+
+[libraries]
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+antlr-kotlin-runtime = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlr-kotlin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+antlr-kotlin = { id = "com.strumenta.antlr-kotlin", version.ref = "antlr-kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
